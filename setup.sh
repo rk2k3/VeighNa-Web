@@ -3,32 +3,40 @@ echo "Setting up VeighNA trading environment..."
 
 # 1. Create venv
 python3 -m venv venv
-
-# 2. Activate venv inside this script
 source venv/bin/activate
-
-# 3. Install pip packages
 pip install --upgrade pip
-pip install -r requirements.txt
 
-# 4. Install ibapi from vendor folder (pinned to working version 10.45.1)
-echo "Installing ibapi from vendor..."
+# 2. Install everything from VeighNA's index
+pip install \
+    vnpy \
+    vnpy_ib \
+    vnpy_ctastrategy \
+    vnpy_ctabacktester \
+    vnpy_portfoliostrategy \
+    vnpy_paperaccount \
+    vnpy_sqlite \
+    vnpy_polygon \
+    vnpy_webtrader \
+    yfinance \
+    matplotlib \
+    python-dotenv \
+    --index-url https://pypi.vnpy.com/simple/ \
+    --extra-index-url https://pypi.org/simple/
+
+# 3. Install ibapi from vendor
 pip install vendor/ibapi_pkg
 
-# 5. Apply patches
+# 4. Apply patches
 python setup_patches.py
 
-# 6. Copy .env if it doesn't exist
+# 5. Copy .env
 if [ ! -f .env ]; then
     cp .env.example .env
-    echo "Created .env from .env.example — please fill in your credentials"
+    echo "Created .env from .env.example"
 fi
 
 echo ""
 echo "Setup complete!"
-echo "IMPORTANT: Activate venv in your terminal before running:"
-echo "  source venv/bin/activate"
-echo ""
-echo "Then run with:"
-echo "  python run.py        # GUI mode"
-echo "  python run_server.py # Headless mode"
+echo "Activate venv: source venv/bin/activate"
+echo "GUI mode:      python run.py"
+echo "Headless mode: python run_server.py"
