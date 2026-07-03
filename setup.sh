@@ -20,6 +20,7 @@ pip install \
     yfinance \
     matplotlib \
     python-dotenv \
+    "pandas==2.2.3" \
     --index-url https://pypi.vnpy.com/simple/ \
     --extra-index-url https://pypi.org/simple/
 
