@@ -11,21 +11,9 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# 4. Install ibapi manually
-IBAPI_PATH="${IBAPI_PATH:-$HOME/IBJts/source/pythonclient}"
-
-if [ -d "$IBAPI_PATH" ]; then
-    echo "Installing ibapi from $IBAPI_PATH..."
-    cd "$IBAPI_PATH"
-    sudo chmod -R 755 .
-    pip install .
-    cd -
-else
-    echo "WARNING: ibapi not found at $IBAPI_PATH"
-    echo "Please download TWS API from IBKR and set IBAPI_PATH:"
-    echo "export IBAPI_PATH=/path/to/IBJts/source/pythonclient"
-    echo "Then re-run this script"
-fi
+# 4. Install ibapi from vendor folder (pinned to working version 10.45.1)
+echo "Installing ibapi from vendor..."
+pip install vendor/ibapi_pkg
 
 # 5. Apply patches
 python setup_patches.py
