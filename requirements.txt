@@ -1,0 +1,19 @@
+# Install ibapi manually from IBKR — see setup.sh
+# ibapi is NOT on PyPI
+
+vnpy
+vnpy_ib
+vnpy_ctastrategy
+vnpy_ctabacktester
+vnpy_portfoliostrategy
+vnpy_paperaccount
+vnpy_sqlite
+vnpy_polygon
+vnpy_webtrader
+yfinance
+matplotlib
+python-dotenv
+numpy==2.2.3
+pandas==2.2.3
+protobuf==5.29.5
+ta-lib
