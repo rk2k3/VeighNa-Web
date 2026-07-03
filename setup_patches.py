@@ -5,10 +5,15 @@ sp = site.getsitepackages()[0]
 
 patches = [
     (f"{sp}/vnpy_ib/ib_gateway.py", [
+        # Fix error() signature for ibapi 10.45.1+
+        ('        super().error(reqId, errorCode, errorString)',
+         '        super().error(reqId, errorTime, errorCode, errorString, advancedOrderRejectJson)'),
         ('"TWS地址"', '"Host"'),
         ('"TWS端口"', '"Port"'),
         ('"客户号"', '"Client ID"'),
         ('"交易账户"', '"Trading Account"'),
+        ('    def error(\n        self,\n        reqId: TickerId,\n        errorCode: int,\n        errorString: str,\n        advancedOrderRejectJson: str = ""\n    ) -> None:\n        """具体错误请求回报"""\n        super().error(reqId, errorCode, errorString)',
+         '    def error(\n        self,\n        reqId: TickerId,\n        errorTime: int = 0,\n        errorCode: int = 0,\n        errorString: str = "",\n        advancedOrderRejectJson: str = ""\n    ) -> None:\n        """具体错误请求回报"""\n        super().error(reqId, errorTime, errorCode, errorString)'),
         ('msg: str = f"信息通知，代码：{errorCode}，内容: {errorString}"',
          'msg: str = f"Notice, code: {errorCode}, message: {errorString}"'),
         ('    86: "open_interest"\n}',
@@ -29,6 +34,27 @@ patches = [
     ]),
     (f"{sp}/vnpy_paperaccount/__init__.py", [
         ('display_name: str = "模拟交易"', 'display_name: str = "Paper Trading"'),
+    ]),
+    (f"{sp}/vnpy_ib/ib_gateway.py", [
+        ('''    def error(
+        self,
+        reqId: TickerId,
+        errorCode: int,
+        errorString: str,
+        advancedOrderRejectJson: str = ""
+    ) -> None:
+        """具体错误请求回报"""
+        super().error(reqId, errorCode, errorString)''',
+        '''    def error(
+        self,
+        reqId: TickerId,
+        errorTime: int = 0,
+        errorCode: int = 0,
+        errorString: str = "",
+        advancedOrderRejectJson: str = ""
+    ) -> None:
+        """Error callback"""
+        super().error(reqId, errorCode, errorString)'''),
     ]),
     (f"{sp}/vnpy_polygon/polygon_datafeed.py", [
         ('dt: datetime = datetime.fromtimestamp(agg.timestamp / 1000)',
