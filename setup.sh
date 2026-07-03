@@ -26,10 +26,13 @@ pip install \
 # 3. Install ibapi from vendor
 pip install vendor/ibapi_pkg
 
-# 4. Apply patches
+# 4. Upgrade protobuf to match ibapi requirements
+pip install --upgrade protobuf
+
+# 5. Apply patches
 python setup_patches.py
 
-# 5. Copy .env
+# 6. Copy .env
 if [ ! -f .env ]; then
     cp .env.example .env
     echo "Created .env from .env.example"
