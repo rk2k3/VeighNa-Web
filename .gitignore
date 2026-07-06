@@ -5,6 +5,8 @@ __pycache__/
 *.db
 *.csv
 *.json
+!frontend/**/*.json
+!.claude/*.json
 *.png
 log/
 results/

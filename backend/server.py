@@ -304,9 +304,9 @@ async def websocket_endpoint(websocket: WebSocket):
         if websocket in ws_clients:
             ws_clients.remove(websocket)
 
-frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
-os.makedirs(frontend_dir, exist_ok=True)
-app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
+frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+if os.path.isdir(frontend_dist):
+    app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn

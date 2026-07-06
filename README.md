@@ -59,6 +59,22 @@ GUI mode (local testing with full VeighNA interface):
 Headless mode (for web integration / production):
     python run_server.py
 
+## Frontend
+
+The frontend is a Vite + React + TypeScript app in frontend/.
+
+Development (hot reload, talks to API at http://localhost:8000):
+    cd frontend
+    npm install
+    npm run dev
+
+Production build (served by the FastAPI backend at http://localhost:8000/):
+    cd frontend
+    npm run build
+
+The backend automatically serves frontend/dist/ at the root path if it exists.
+Set VITE_API_URL in frontend/.env to point the dev server at a different backend host.
+
 ## Project Structure
 
 VeighNa/
@@ -71,6 +87,12 @@ VeighNa/
     .env                        Local credentials (never commit)
     .env.example                Template for other developers
     Dockerfile                  For future containerization
+    frontend/                   Vite + React + TypeScript web UI
+        src/
+            components/          Page and shared UI components
+            hooks/               useWebSocket, etc.
+            api.ts               REST client for the FastAPI backend
+            types.ts             Shared TypeScript types
     vendor/
         ibapi_pkg/              Vendored ibapi 10.45.1
     load_commodities.py         Download commodity data via yfinance
