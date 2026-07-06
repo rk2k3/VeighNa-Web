@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>VeighNA Strategy Simulator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial; background: #1a1a2e; color: #eee; padding: 20px; }
+    h1 { color: #4fc3f7; margin-bottom: 20px; }
+    h2 { color: #4fc3f7; margin-bottom: 12px; font-size: 16px; }
+    h3 { color: #4fc3f7; margin: 12px 0 8px; font-size: 14px; }
+    .section { background: #16213e; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    input, select { background: #0f3460; color: #eee; border: 1px solid #4fc3f7; border-radius: 4px; padding: 8px; margin: 4px; width: 180px; }
+    button { background: #4fc3f7; color: #000; border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer; margin: 4px; font-weight: bold; }
+    button:hover { background: #81d4fa; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th { background: #0f3460; color: #4fc3f7; padding: 8px; text-align: left; }
+    td { padding: 8px; border-bottom: 1px solid #0f3460; }
+    .ticker { font-size: 24px; color: #69f0ae; margin: 12px 0; }
+    .stat { display: inline-block; background: #0f3460; border-radius: 4px; padding: 8px 12px; margin: 4px; }
+    .stat-label { font-size: 11px; color: #4fc3f7; }
+    .stat-value { font-size: 16px; font-weight: bold; }
+    .green { color: #69f0ae; }
+    .red { color: #ef5350; }
+    .tabs { display: flex; margin-bottom: 20px; }
+    .tab { padding: 10px 24px; cursor: pointer; border-bottom: 2px solid transparent; color: #888; }
+    .tab.active { border-bottom: 2px solid #4fc3f7; color: #4fc3f7; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .status { font-size: 12px; color: #888; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<h1>VeighNA Strategy Simulator</h1>
+
+<div class="section">
+  <h2>Account</h2>
+  <div id="account">Loading...</div>
+  <div class="status" id="connection_status">Connecting...</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showPage('backtest', this)">Backtest</div>
+  <div class="tab" onclick="showPage('paper', this)">Paper Trading</div>
+  <div class="tab" onclick="showPage('portfolio', this)">Portfolio</div>
+</div>
+
+<div id="page_backtest" class="page active">
+  <div class="section">
+    <h2>Run Backtest</h2>
+    <div>
+      <input id="bt_symbol" value="AAPL" placeholder="Symbol"/>
+      <input id="bt_exchange" value="NASDAQ" placeholder="Exchange"/>
+      <input id="bt_start" type="date" value="2020-01-01"/>
+      <input id="bt_end" type="date" value="2024-01-01"/>
+      <input id="bt_capital" value="100000" placeholder="Capital"/>
+      <select id="bt_strategy">
+        <option value="buy_and_hold_strategy">Buy and Hold</option>
+        <option value="double_ma_strategy">Double MA</option>
+      </select>
+      <button onclick="runBacktest()">Run Backtest</button>
+    </div>
+    <div id="bt_status" class="status"></div>
+    <div id="bt_results" style="margin-top:12px;"></div>
+  </div>
+</div>
+
+<div id="page_paper" class="page">
+  <div class="section">
+    <h2>Subscribe to Symbol</h2>
+    <div>
+      <input id="sub_symbol" value="AAPL" placeholder="Symbol"/>
+      <input id="sub_exchange" value="NASDAQ" placeholder="Exchange"/>
+      <button onclick="subscribe()">Subscribe</button>
+    </div>
+    <div class="ticker" id="ticker">Waiting for prices...</div>
+  </div>
+  <div class="section">
+    <h2>Place Order</h2>
+    <div>
+      <input id="order_symbol" placeholder="Symbol"/>
+      <input id="order_price" placeholder="Price"/>
+      <input id="order_volume" placeholder="Volume"/>
+      <button onclick="placeOrder('Long')">Buy</button>
+      <button onclick="placeOrder('Short')" style="background:#ef5350;color:#fff;">Sell</button>
+    </div>
+    <div id="order_status" class="status"></div>
+  </div>
+  <div class="section">
+    <h2>Positions</h2>
+    <button onclick="loadPositions()" style="margin-bottom:8px;">Refresh</button>
+    <table>
+      <thead><tr><th>Symbol</th><th>Direction</th><th>Volume</th><th>Avg Price</th><th>PnL</th></tr></thead>
+      <tbody id="positions"><tr><td colspan="5" style="text-align:center;color:#888;">No positions</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="page_portfolio" class="page">
+  <div class="section">
+    <h2>Portfolio Backtest</h2>
+    <div>
+      <input id="port_symbols" value="AAPL,MSFT,GOOGL" placeholder="Symbols (comma separated)" style="width:300px;"/>
+      <input id="port_exchange" value="NASDAQ" placeholder="Exchange"/>
+      <input id="port_start" type="date" value="2020-01-01"/>
+      <input id="port_end" type="date" value="2024-01-01"/>
+      <input id="port_capital" value="100000" placeholder="Capital"/>
+      <button onclick="runPortfolioBacktest()">Run Portfolio Backtest</button>
+    </div>
+    <div id="port_status" class="status"></div>
+    <div id="port_results" style="margin-top:12px;"></div>
+  </div>
+  <div class="section">
+    <h2>Available Symbols in Database</h2>
+    <button onclick="loadSymbols()">Load Symbols</button>
+    <table style="margin-top:8px;">
+      <thead><tr><th>Symbol</th><th>Exchange</th><th>Bar Count</th></tr></thead>
+      <tbody id="symbols"><tr><td colspan="3" style="text-align:center;color:#888;">Click Load Symbols</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000'
+
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+  document.getElementById('page_' + name).classList.add('active')
+  el.classList.add('active')
+}
+
+const ws = new WebSocket('ws://localhost:8000/ws')
+ws.onopen = () => {
+  document.getElementById('connection_status').textContent = 'Connected to VeighNA server'
+  document.getElementById('connection_status').style.color = '#69f0ae'
+}
+ws.onclose = () => {
+  document.getElementById('connection_status').textContent = 'Disconnected'
+  document.getElementById('connection_status').style.color = '#ef5350'
+}
+ws.onmessage = (e) => {
+  const data = JSON.parse(e.data)
+  if (data.type === 'tick') {
+    document.getElementById('ticker').innerHTML =
+      data.symbol + ': <strong>$' + Number(data.price).toFixed(2) + '</strong> | Bid: ' + Number(data.bid).toFixed(2) + ' | Ask: ' + Number(data.ask).toFixed(2)
+  }
+  if (data.type === 'position') { loadPositions(); loadAccount(); }
+}
+
+async function loadAccount() {
+  try {
+    const res = await fetch(API + '/account')
+    const data = await res.json()
+    document.getElementById('account').innerHTML =
+      '<div class="stat"><div class="stat-label">Portfolio Value</div><div class="stat-value">$' + Number(data.balance).toLocaleString('en-US', {minimumFractionDigits:2}) + '</div></div>' +
+      '<div class="stat"><div class="stat-label">Frozen</div><div class="stat-value">$' + Number(data.frozen).toLocaleString('en-US', {minimumFractionDigits:2}) + '</div></div>'
+  } catch(e) {
+    document.getElementById('account').textContent = 'Failed to load account'
+  }
+}
+
+async function subscribe() {
+  const res = await fetch(API + '/subscribe', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ symbol: document.getElementById('sub_symbol').value, exchange: document.getElementById('sub_exchange').value })
+  })
+  const data = await res.json()
+  document.getElementById('ticker').textContent = data.status
+}
+
+async function placeOrder(direction) {
+  document.getElementById('order_status').textContent = 'Submitting...'
+  try {
+    const res = await fetch(API + '/order', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        symbol: document.getElementById('order_symbol').value,
+        exchange: 'NASDAQ', direction,
+        price: parseFloat(document.getElementById('order_price').value),
+        volume: parseFloat(document.getElementById('order_volume').value)
+      })
+    })
+    const data = await res.json()
+    document.getElementById('order_status').textContent = 'Order submitted: ' + data.vt_orderid
+    document.getElementById('order_status').style.color = '#69f0ae'
+    loadPositions()
+  } catch(e) {
+    document.getElementById('order_status').textContent = 'Error: ' + e.message
+    document.getElementById('order_status').style.color = '#ef5350'
+  }
+}
+
+async function loadPositions() {
+  try {
+    const res = await fetch(API + '/positions')
+    const positions = await res.json()
+    document.getElementById('positions').innerHTML = positions.length
+      ? positions.map(p =>
+          '<tr><td>' + p.symbol + '</td><td>' + p.direction + '</td><td>' + p.volume +
+          '</td><td>$' + Number(p.price).toFixed(2) +
+          '</td><td class="' + (p.pnl >= 0 ? 'green' : 'red') + '">$' + Number(p.pnl).toFixed(2) + '</td></tr>'
+        ).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:#888;">No positions</td></tr>'
+  } catch(e) { console.error(e) }
+}
+
+async function runBacktest() {
+  document.getElementById('bt_status').textContent = 'Running...'
+  document.getElementById('bt_results').innerHTML = ''
+  try {
+    const res = await fetch(API + '/backtest', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        symbol: document.getElementById('bt_symbol').value,
+        exchange: document.getElementById('bt_exchange').value,
+        start: document.getElementById('bt_start').value,
+        end: document.getElementById('bt_end').value,
+        strategy: document.getElementById('bt_strategy').value,
+        capital: parseFloat(document.getElementById('bt_capital').value),
+        params: {}
+      })
+    })
+    const data = await res.json()
+    const s = data.statistics
+    document.getElementById('bt_status').textContent = 'Complete'
+    document.getElementById('bt_status').style.color = '#69f0ae'
+    document.getElementById('bt_results').innerHTML =
+      '<div class="stat"><div class="stat-label">Total Return</div><div class="stat-value ' + (parseFloat(s.total_return)>=0?'green':'red') + '">' + parseFloat(s.total_return).toFixed(2) + '%</div></div>' +
+      '<div class="stat"><div class="stat-label">Annual Return</div><div class="stat-value">' + parseFloat(s.annual_return).toFixed(2) + '%</div></div>' +
+      '<div class="stat"><div class="stat-label">Sharpe Ratio</div><div class="stat-value">' + parseFloat(s.sharpe_ratio).toFixed(2) + '</div></div>' +
+      '<div class="stat"><div class="stat-label">Max Drawdown</div><div class="stat-value red">' + parseFloat(s.max_ddpercent).toFixed(2) + '%</div></div>' +
+      '<div class="stat"><div class="stat-label">Total Trades</div><div class="stat-value">' + s.total_trade_count + '</div></div>' +
+      '<div class="stat"><div class="stat-label">End Balance</div><div class="stat-value">$' + parseFloat(s.end_balance).toLocaleString() + '</div></div>'
+  } catch(e) {
+    document.getElementById('bt_status').textContent = 'Error: ' + e.message
+    document.getElementById('bt_status').style.color = '#ef5350'
+  }
+}
+
+async function runPortfolioBacktest() {
+  document.getElementById('port_status').textContent = 'Running portfolio backtest...'
+  document.getElementById('port_results').innerHTML = ''
+  const symbols = document.getElementById('port_symbols').value.split(',').map(s => s.trim())
+  try {
+    const res = await fetch(API + '/portfolio_backtest', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        symbols: symbols,
+        exchange: document.getElementById('port_exchange').value,
+        start: document.getElementById('port_start').value,
+        end: document.getElementById('port_end').value,
+        capital: parseFloat(document.getElementById('port_capital').value),
+        weights: {}
+      })
+    })
+    const data = await res.json()
+    if (data.detail) throw new Error(data.detail)
+    const s = data.statistics
+    const weights = data.weights
+    document.getElementById('port_status').textContent = 'Complete'
+    document.getElementById('port_status').style.color = '#69f0ae'
+    document.getElementById('port_results').innerHTML =
+      '<h3>Allocation</h3>' +
+      '<table><thead><tr><th>Symbol</th><th>Weight</th></tr></thead><tbody>' +
+      Object.entries(weights).map(([sym, w]) =>
+        '<tr><td>' + sym + '</td><td>' + (w * 100).toFixed(1) + '%</td></tr>'
+      ).join('') + '</tbody></table>' +
+      '<h3 style="margin-top:16px;">Portfolio Results</h3>' +
+      '<div class="stat"><div class="stat-label">Total Return</div><div class="stat-value ' + (parseFloat(s.total_return)>=0?'green':'red') + '">' + parseFloat(s.total_return).toFixed(2) + '%</div></div>' +
+      '<div class="stat"><div class="stat-label">Annual Return</div><div class="stat-value">' + parseFloat(s.annual_return).toFixed(2) + '%</div></div>' +
+      '<div class="stat"><div class="stat-label">Sharpe Ratio</div><div class="stat-value">' + parseFloat(s.sharpe_ratio).toFixed(2) + '</div></div>' +
+      '<div class="stat"><div class="stat-label">Max Drawdown</div><div class="stat-value red">' + parseFloat(s.max_ddpercent).toFixed(2) + '%</div></div>' +
+      '<div class="stat"><div class="stat-label">End Balance</div><div class="stat-value">$' + parseFloat(s.end_balance).toLocaleString() + '</div></div>' +
+      '<div class="stat"><div class="stat-label">Total Trades</div><div class="stat-value">' + s.total_trade_count + '</div></div>'
+  } catch(e) {
+    document.getElementById('port_status').textContent = 'Error: ' + e.message
+    document.getElementById('port_status').style.color = '#ef5350'
+  }
+}
+
+async function loadSymbols() {
+  const res = await fetch(API + '/symbols')
+  const symbols = await res.json()
+  document.getElementById('symbols').innerHTML = symbols.length
+    ? symbols.map(s => '<tr><td>' + s.symbol + '</td><td>' + s.exchange + '</td><td>' + s.count + '</td></tr>').join('')
+    : '<tr><td colspan="3" style="text-align:center;color:#888;">No symbols in database</td></tr>'
+}
+
+loadAccount()
+loadPositions()
+setInterval(loadAccount, 30000)
+setInterval(loadPositions, 10000)
+</script>
+</body>
+</html>
