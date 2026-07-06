@@ -1,16 +1,13 @@
-# Install via setup.sh which uses VeighNA's PyPI index
-# Do not use pip install -r requirements.txt directly
+--index-url https://pypi.vnpy.com/simple/
+--extra-index-url https://pypi.org/simple/
 
 vnpy
-vnpy_ib
 vnpy_ctastrategy
 vnpy_ctabacktester
 vnpy_portfoliostrategy
-vnpy_paperaccount
 vnpy_sqlite
-vnpy_polygon
-vnpy_webtrader
-yfinance
-matplotlib
+pandas==2.2.3
 python-dotenv
-# ibapi installed from vendor/ibapi_pkg — see setup.sh
+fastapi
+uvicorn[standard]
+alpaca-py
