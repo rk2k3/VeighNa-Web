@@ -1,6 +1,6 @@
 import type { Account, BacktestResult, Direction, PortfolioBacktestResult, Position, SymbolInfo } from './types'
 
-export const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+export const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8100'
 
 async function postJSON<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(API + path, {
