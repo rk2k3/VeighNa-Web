@@ -10,6 +10,7 @@ from vnpy_ctastrategy import CtaStrategyApp
 from vnpy_ctabacktester import CtaBacktesterApp
 from vnpy_portfoliostrategy import PortfolioStrategyApp
 from vnpy_paperaccount import PaperAccountApp
+from vnpy_webtrader import WebTraderApp
 
 from config import IB_HOST, IB_PORT, IB_CLIENT_ID, IB_ACCOUNT
 
