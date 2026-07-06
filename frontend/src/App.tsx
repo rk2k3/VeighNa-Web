@@ -53,7 +53,7 @@ function App() {
 
   return (
     <>
-      <h1>VeighNA Strategy Simulator</h1>
+      <h1>Strategy Tester</h1>
 
       <AccountPanel account={account} error={accountError} connected={connected} />
 
