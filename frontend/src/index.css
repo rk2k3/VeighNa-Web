@@ -6,24 +6,24 @@
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background: #020617;
+  background: #0f172a;
   color: #e2e8f0;
   padding: 20px;
 }
 
 h1 {
-  color: #06b6d4;
+  color: #ffffff;
   margin-bottom: 20px;
 }
 
 h2 {
-  color: #06b6d4;
+  color: #ffffff;
   margin-bottom: 12px;
   font-size: 16px;
 }
 
 h3 {
-  color: #06b6d4;
+  color: #ffffff;
   margin: 12px 0 8px;
   font-size: 14px;
 }
@@ -32,7 +32,7 @@ input,
 select {
   background: #1e293b;
   color: #e2e8f0;
-  border: 1px solid #06b6d4;
+  border: 1px solid #2563eb;
   border-radius: 4px;
   padding: 8px;
   margin: 4px;
@@ -40,7 +40,7 @@ select {
 }
 
 button {
-  background: #06b6d4;
+  background: #2563eb;
   color: #000;
   border: none;
   border-radius: 4px;
@@ -51,7 +51,7 @@ button {
 }
 
 button:hover {
-  background: #22d3ee;
+  background: #3b82f6;
 }
 
 table {
@@ -62,7 +62,7 @@ table {
 
 th {
   background: #1e293b;
-  color: #06b6d4;
+  color: #2563eb;
   padding: 8px;
   text-align: left;
 }
@@ -89,7 +89,7 @@ td {
 
 .stat-label {
   font-size: 11px;
-  color: #06b6d4;
+  color: #2563eb;
 }
 
 .stat-value {
@@ -119,8 +119,8 @@ td {
 }
 
 .tab.active {
-  border-bottom: 2px solid #06b6d4;
-  color: #06b6d4;
+  border-bottom: 2px solid #2563eb;
+  color: #2563eb;
 }
 
 .status {
