@@ -5,34 +5,34 @@
 }
 
 body {
-  font-family: Arial;
-  background: #1a1a2e;
-  color: #eee;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #020617;
+  color: #e2e8f0;
   padding: 20px;
 }
 
 h1 {
-  color: #4fc3f7;
+  color: #06b6d4;
   margin-bottom: 20px;
 }
 
 h2 {
-  color: #4fc3f7;
+  color: #06b6d4;
   margin-bottom: 12px;
   font-size: 16px;
 }
 
 h3 {
-  color: #4fc3f7;
+  color: #06b6d4;
   margin: 12px 0 8px;
   font-size: 14px;
 }
 
 input,
 select {
-  background: #0f3460;
-  color: #eee;
-  border: 1px solid #4fc3f7;
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #06b6d4;
   border-radius: 4px;
   padding: 8px;
   margin: 4px;
@@ -40,7 +40,7 @@ select {
 }
 
 button {
-  background: #4fc3f7;
+  background: #06b6d4;
   color: #000;
   border: none;
   border-radius: 4px;
@@ -51,7 +51,7 @@ button {
 }
 
 button:hover {
-  background: #81d4fa;
+  background: #22d3ee;
 }
 
 table {
@@ -61,26 +61,27 @@ table {
 }
 
 th {
-  background: #0f3460;
-  color: #4fc3f7;
+  background: #1e293b;
+  color: #06b6d4;
   padding: 8px;
   text-align: left;
 }
 
 td {
   padding: 8px;
-  border-bottom: 1px solid #0f3460;
+  border-bottom: 1px solid #334155;
 }
 
 .ticker {
+  font-family: 'JetBrains Mono', Menlo, monospace;
   font-size: 24px;
-  color: #69f0ae;
+  color: #10b981;
   margin: 12px 0;
 }
 
 .stat {
   display: inline-block;
-  background: #0f3460;
+  background: #1e293b;
   border-radius: 4px;
   padding: 8px 12px;
   margin: 4px;
@@ -88,20 +89,21 @@ td {
 
 .stat-label {
   font-size: 11px;
-  color: #4fc3f7;
+  color: #06b6d4;
 }
 
 .stat-value {
+  font-family: 'JetBrains Mono', Menlo, monospace;
   font-size: 16px;
   font-weight: bold;
 }
 
 .green {
-  color: #69f0ae;
+  color: #10b981;
 }
 
 .red {
-  color: #ef5350;
+  color: #f43f5e;
 }
 
 .tabs {
@@ -113,16 +115,16 @@ td {
   padding: 10px 24px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  color: #888;
+  color: #64748b;
 }
 
 .tab.active {
-  border-bottom: 2px solid #4fc3f7;
-  color: #4fc3f7;
+  border-bottom: 2px solid #06b6d4;
+  color: #06b6d4;
 }
 
 .status {
   font-size: 12px;
-  color: #888;
+  color: #64748b;
   margin-top: 8px;
 }

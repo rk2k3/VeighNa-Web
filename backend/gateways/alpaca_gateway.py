@@ -250,6 +250,9 @@ class AlpacaGateway(BaseGateway):
             return []
     def close(self):
         if self.data_stream:
-            self.data_stream.stop()
+            try:
+                self.data_stream.stop()
+            except Exception:
+                pass
         if self.loop:
             self.loop.call_soon_threadsafe(self.loop.stop)
