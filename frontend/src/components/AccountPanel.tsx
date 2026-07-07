@@ -29,8 +29,8 @@ export function AccountPanel({ account, error, connected }: AccountPanelProps) {
           </>
         )}
       </div>
-      <div className="status" style={{ color: connected ? '#69f0ae' : '#ef5350' }}>
-        {connected ? 'Connected to VeighNA server' : 'Disconnected'}
+      <div className="status" style={{ color: connected ? '#10b981' : '#f43f5e' }}>
+        {connected ? 'Connected to Strategy Engine' : 'Disconnected'}
       </div>
     </div>
   )
