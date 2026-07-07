@@ -32,7 +32,7 @@ input,
 select {
   background: #1e293b;
   color: #e2e8f0;
-  border: 1px solid #2563eb;
+  border: 1px solid #334155;
   border-radius: 4px;
   padding: 8px;
   margin: 4px;
@@ -89,7 +89,7 @@ td {
 
 .stat-label {
   font-size: 11px;
-  color: #2563eb;
+  color: #ffffff;
 }
 
 .stat-value {
