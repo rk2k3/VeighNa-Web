@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { runBacktest } from '../api'
-import type { BacktestStatistics } from '../types'
+import type { BacktestResult } from '../types'
 import { BacktestStatsGrid } from './BacktestStatsGrid'
+import { BacktestCharts } from './BacktestCharts'
+import { BacktestMetricsTable } from './BacktestMetricsTable'
 
 const STRATEGIES = [
   { value: 'buy_and_hold_strategy', label: 'Buy and Hold' },
@@ -18,20 +20,20 @@ export function BacktestPage() {
 
   const [status, setStatus] = useState('')
   const [statusColor, setStatusColor] = useState('')
-  const [stats, setStats] = useState<BacktestStatistics | null>(null)
+  const [result, setResult] = useState<BacktestResult | null>(null)
 
   async function handleRun() {
     setStatus('Running...')
     setStatusColor('')
-    setStats(null)
+    setResult(null)
     try {
       const data = await runBacktest({ symbol, exchange, start, end, strategy, capital: parseFloat(capital) })
       setStatus('Complete')
-      setStatusColor('#69f0ae')
-      setStats(data.statistics)
+      setStatusColor('#10b981')
+      setResult(data)
     } catch (e) {
       setStatus('Error: ' + (e as Error).message)
-      setStatusColor('#ef5350')
+      setStatusColor('#f43f5e')
     }
   }
 
@@ -57,8 +59,15 @@ export function BacktestPage() {
         <div className="status" style={{ color: statusColor }}>
           {status}
         </div>
-        <div style={{ marginTop: 12 }}>{stats && <BacktestStatsGrid stats={stats} />}</div>
+        <div style={{ marginTop: 12 }}>{result && <BacktestStatsGrid stats={result.statistics} />}</div>
       </div>
+      {result && (
+        <div className="section">
+          <h2>Results</h2>
+          <BacktestCharts dailyResults={result.daily_results ?? []} />
+          <BacktestMetricsTable stats={result.statistics} />
+        </div>
+      )}
     </div>
   )
 }

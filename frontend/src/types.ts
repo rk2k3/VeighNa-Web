@@ -18,14 +18,26 @@ export interface BacktestStatistics {
   max_ddpercent: string | number
   total_trade_count: number
   end_balance: string | number
+  [key: string]: string | number | undefined
+}
+
+export interface DailyResult {
+  date: string
+  balance: number
+  drawdown: number
+  ddpercent: number
+  net_pnl: number
+  [key: string]: string | number | undefined
 }
 
 export interface BacktestResult {
   statistics: BacktestStatistics
+  daily_results: DailyResult[]
 }
 
 export interface PortfolioBacktestResult {
   statistics: BacktestStatistics
+  daily_results: DailyResult[]
   weights: Record<string, number>
   detail?: string
 }
