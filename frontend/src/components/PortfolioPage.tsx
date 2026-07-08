@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { fetchSymbols, runPortfolioBacktest } from '../api'
-import type { BacktestStatistics, SymbolInfo } from '../types'
+import type { PortfolioBacktestResult, SymbolInfo } from '../types'
 import { BacktestStatsGrid } from './BacktestStatsGrid'
+import { BacktestCharts } from './BacktestCharts'
+import { BacktestMetricsTable } from './BacktestMetricsTable'
 import { SymbolsTable } from './SymbolsTable'
 
 // Polygon's free tier only serves ~2 years of history, so default to the last year
@@ -21,16 +23,14 @@ export function PortfolioPage() {
 
   const [status, setStatus] = useState('')
   const [statusColor, setStatusColor] = useState('')
-  const [stats, setStats] = useState<BacktestStatistics | null>(null)
-  const [weights, setWeights] = useState<Record<string, number> | null>(null)
+  const [result, setResult] = useState<PortfolioBacktestResult | null>(null)
 
   const [dbSymbols, setDbSymbols] = useState<SymbolInfo[] | null>(null)
 
   async function handleRun() {
     setStatus('Running portfolio backtest...')
     setStatusColor('')
-    setStats(null)
-    setWeights(null)
+    setResult(null)
     try {
       const data = await runPortfolioBacktest({
         symbols: symbols.split(',').map((s) => s.trim()),
@@ -39,14 +39,12 @@ export function PortfolioPage() {
         end,
         capital: parseFloat(capital),
       })
-      if (data.detail) throw new Error(data.detail)
       setStatus('Complete')
-      setStatusColor('#69f0ae')
-      setStats(data.statistics)
-      setWeights(data.weights)
+      setStatusColor('#10b981')
+      setResult(data)
     } catch (e) {
       setStatus('Error: ' + (e as Error).message)
-      setStatusColor('#ef5350')
+      setStatusColor('#f43f5e')
     }
   }
 
@@ -75,7 +73,7 @@ export function PortfolioPage() {
           {status}
         </div>
         <div style={{ marginTop: 12 }}>
-          {weights && (
+          {result && (
             <>
               <h3>Allocation</h3>
               <table>
@@ -86,7 +84,7 @@ export function PortfolioPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(weights).map(([sym, w]) => (
+                  {Object.entries(result.weights).map(([sym, w]) => (
                     <tr key={sym}>
                       <td>{sym}</td>
                       <td>{(w * 100).toFixed(1)}%</td>
@@ -94,16 +92,19 @@ export function PortfolioPage() {
                   ))}
                 </tbody>
               </table>
-            </>
-          )}
-          {stats && (
-            <>
               <h3 style={{ marginTop: 16 }}>Portfolio Results</h3>
-              <BacktestStatsGrid stats={stats} />
+              <BacktestStatsGrid stats={result.statistics} />
             </>
           )}
         </div>
       </div>
+      {result && (
+        <div className="section">
+          <h2>Results</h2>
+          <BacktestCharts dailyResults={result.daily_results ?? []} />
+          <BacktestMetricsTable stats={result.statistics} />
+        </div>
+      )}
       <SymbolsTable symbols={dbSymbols} onLoad={handleLoadSymbols} />
     </div>
   )
