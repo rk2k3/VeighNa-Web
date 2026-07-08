@@ -4,11 +4,19 @@ import type { BacktestStatistics, SymbolInfo } from '../types'
 import { BacktestStatsGrid } from './BacktestStatsGrid'
 import { SymbolsTable } from './SymbolsTable'
 
+// Polygon's free tier only serves ~2 years of history, so default to the last year
+function defaultDates() {
+  const end = new Date()
+  const start = new Date()
+  start.setFullYear(end.getFullYear() - 1)
+  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) }
+}
+
 export function PortfolioPage() {
   const [symbols, setSymbols] = useState('AAPL,MSFT,GOOGL')
   const [exchange, setExchange] = useState('NASDAQ')
-  const [start, setStart] = useState('2020-01-01')
-  const [end, setEnd] = useState('2024-01-01')
+  const [start, setStart] = useState(defaultDates().start)
+  const [end, setEnd] = useState(defaultDates().end)
   const [capital, setCapital] = useState('100000')
 
   const [status, setStatus] = useState('')

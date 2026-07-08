@@ -2,18 +2,32 @@ import type { Account, BacktestResult, Direction, PortfolioBacktestResult, Posit
 
 export const API = import.meta.env.VITE_API_URL ?? ''
 
+async function parseResponse<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    let detail = res.statusText
+    try {
+      const data = await res.json()
+      if (data.detail) detail = String(data.detail)
+    } catch {
+      // non-JSON error body; keep statusText
+    }
+    throw new Error(detail)
+  }
+  return res.json()
+}
+
 async function postJSON<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(API + path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
-  return res.json()
+  return parseResponse<T>(res)
 }
 
 async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(API + path)
-  return res.json()
+  return parseResponse<T>(res)
 }
 
 export function fetchAccount() {

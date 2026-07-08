@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -21,6 +21,7 @@ from vnpy_ctastrategy import CtaStrategyApp
 from vnpy_ctabacktester import CtaBacktesterApp
 from vnpy_portfoliostrategy import PortfolioStrategyApp
 from gateways.alpaca_gateway import AlpacaGateway
+from datafeed.polygon_feed import ensure_bar_data
 
 event_engine = EventEngine()
 main_engine = MainEngine(event_engine)
@@ -40,12 +41,17 @@ async def broadcast(data):
 
 @asynccontextmanager
 async def lifespan(app):
-    setting = {
-        "API Key": os.getenv("ALPACA_API_KEY", ""),
-        "Secret Key": os.getenv("ALPACA_SECRET_KEY", ""),
-        "Paper Trading": True
-    }
-    main_engine.connect(setting, "ALPACA")
+    api_key = os.getenv("ALPACA_API_KEY", "")
+    secret_key = os.getenv("ALPACA_SECRET_KEY", "")
+    if api_key and secret_key:
+        setting = {
+            "API Key": api_key,
+            "Secret Key": secret_key,
+            "Paper Trading": True
+        }
+        main_engine.connect(setting, "ALPACA")
+    else:
+        main_engine.write_log("No broker credentials in .env — running in backtest-only mode")
 
     def on_tick(event):
         tick = event.data
@@ -124,8 +130,9 @@ def get_account():
         gateway.query_account()
     accounts = main_engine.get_all_accounts()
     if accounts:
-        return {"balance": float(accounts[0].balance), "frozen": float(accounts[0].frozen)}
-    return {"balance": 0, "frozen": 0}
+        return {"connected": True, "balance": float(accounts[0].balance), "frozen": float(accounts[0].frozen)}
+    # No account data means the broker gateway never authenticated (backtest-only mode)
+    return {"connected": False, "balance": 0, "frozen": 0}
 
 @app.get("/strategies")
 def get_strategies():
@@ -150,30 +157,21 @@ class LoadDataReq(BaseModel):
 
 @app.post("/load_data")
 def load_data(req: LoadDataReq):
-    from vnpy.trader.object import HistoryRequest, Interval
-    from vnpy.trader.database import get_database
-    from datetime import datetime
+    from vnpy.trader.constant import Interval
 
-    hist_req = HistoryRequest(
-        symbol=req.symbol,
-        exchange=Exchange(req.exchange),
-        start=datetime.fromisoformat(req.start),
-        end=datetime.fromisoformat(req.end),
-        interval=Interval.DAILY
-    )
-
-    gateway = main_engine.get_gateway("ALPACA")
-    if not gateway:
-        return {"error": "Alpaca gateway not connected"}
-
-    bars = gateway.query_history(hist_req)
-    if not bars:
-        return {"error": "No data returned from Alpaca"}
-
-    db = get_database()
-    db.save_bar_data(bars)
-
-    return {"status": f"Loaded {len(bars)} bars for {req.symbol}"}
+    try:
+        count = ensure_bar_data(
+            symbol=req.symbol,
+            exchange=Exchange(req.exchange),
+            interval=Interval.DAILY,
+            start=datetime.fromisoformat(req.start),
+            end=datetime.fromisoformat(req.end),
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if count:
+        return {"status": f"Loaded {count} bars for {req.symbol} from Polygon"}
+    return {"status": f"{req.symbol} already cached in local database"}
 
 
 class PortfolioBacktestReq(BaseModel):
@@ -198,21 +196,18 @@ def run_portfolio_backtest(req: PortfolioBacktestReq):
 
     vt_symbols = [f"{s}.{req.exchange}" for s in req.symbols]
 
-    # Auto-load data for each symbol from Alpaca
-    gateway = main_engine.get_gateway("ALPACA")
-    if gateway:
-        db = get_database()
+    # Auto-load any missing data from Polygon (cached ranges skip the network)
+    try:
         for symbol in req.symbols:
-            hist_req = HistoryRequest(
+            ensure_bar_data(
                 symbol=symbol,
                 exchange=Exchange(req.exchange),
+                interval=Interval.DAILY,
                 start=datetime.fromisoformat(req.start),
                 end=datetime.fromisoformat(req.end),
-                interval=Interval.DAILY
             )
-            bars = gateway.query_history(hist_req)
-            if bars:
-                db.save_bar_data(bars)
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Calculate weights — equal if not specified
     if not req.weights:
@@ -258,23 +253,18 @@ def run_backtest(req: BacktestReq):
     # Add VeighNa root to path so 'import strategies.xxx' works
     veighna_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     sys.path.insert(0, veighna_root)
-    # Auto-load data from Alpaca before backtesting
-    from vnpy.trader.object import HistoryRequest
-    from vnpy.trader.database import get_database
 
-    gateway = main_engine.get_gateway("ALPACA")
-    if gateway:
-        hist_req = HistoryRequest(
+    # Auto-load any missing data from Polygon (cached ranges skip the network)
+    try:
+        ensure_bar_data(
             symbol=req.symbol,
             exchange=Exchange(req.exchange),
+            interval=Interval.DAILY,
             start=datetime.fromisoformat(req.start),
             end=datetime.fromisoformat(req.end),
-            interval=Interval.DAILY
         )
-        bars = gateway.query_history(hist_req)
-        if bars:
-            db = get_database()
-            db.save_bar_data(bars)
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     engine = BacktestingEngine()
     engine.set_parameters(

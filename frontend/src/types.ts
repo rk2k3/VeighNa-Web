@@ -1,4 +1,5 @@
 export interface Account {
+  connected: boolean
   balance: number
   frozen: number
 }
