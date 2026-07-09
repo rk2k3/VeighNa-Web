@@ -1,25 +1,15 @@
 import { useEffect, useState } from 'react'
 import { fetchPortfolioStrategies, fetchSymbols, runPortfolioBacktest } from '../api'
-import type { PortfolioBacktestResult, StrategyInfo, SymbolInfo } from '../types'
+import { useStrategySelection } from '../hooks/useStrategySelection'
+import { defaultDates } from '../lib/dates'
+import { equalPercents, normalizeWeights, parseSymbols } from '../lib/weights'
+import type { PortfolioBacktestResult, SymbolInfo } from '../types'
+import { AllocationTable } from './AllocationTable'
+import { BacktestResults } from './BacktestResults'
 import { BacktestStatsGrid } from './BacktestStatsGrid'
-import { BacktestCharts } from './BacktestCharts'
-import { BacktestMetricsTable } from './BacktestMetricsTable'
-import { ParamInputs, buildScalarParams, seedParamValues } from './ParamInputs'
+import { ParamInputs, buildScalarParams } from './ParamInputs'
 import { SymbolsTable } from './SymbolsTable'
-
-// Polygon's free tier only serves ~2 years of history, so default to the last year
-function defaultDates() {
-  const end = new Date()
-  const start = new Date()
-  start.setFullYear(end.getFullYear() - 1)
-  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) }
-}
-
-// "AAPL" -> "AAPL.NASDAQ" using the default; "SPY.ARCA" is left as-is.
-function toVtSymbol(entry: string, defaultExchange: string) {
-  const t = entry.trim()
-  return t.includes('.') ? t : `${t}.${defaultExchange}`
-}
+import { WeightsEditor } from './WeightsEditor'
 
 export function PortfolioPage() {
   const [symbols, setSymbols] = useState('AAPL,MSFT,GOOGL')
@@ -28,47 +18,24 @@ export function PortfolioPage() {
   const [end, setEnd] = useState(defaultDates().end)
   const [capital, setCapital] = useState('100000')
 
-  const [strategies, setStrategies] = useState<StrategyInfo[]>([])
-  const [strategy, setStrategy] = useState('')
-  const [paramValues, setParamValues] = useState<Record<string, string>>({})
+  const { strategies, strategy, setStrategy, selected, paramValues, setParamValues } =
+    useStrategySelection(fetchPortfolioStrategies)
+
   // Per-symbol weight as a percentage string, keyed by the raw symbol entry.
   const [weights, setWeights] = useState<Record<string, string>>({})
 
   const [status, setStatus] = useState('')
   const [statusColor, setStatusColor] = useState('')
   const [result, setResult] = useState<PortfolioBacktestResult | null>(null)
-
   const [dbSymbols, setDbSymbols] = useState<SymbolInfo[] | null>(null)
 
-  const symbolList = symbols
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-
-  const selected = strategies.find((s) => s.name === strategy)
+  const symbolList = parseSymbols(symbols)
   const hasWeights = selected?.parameters.some((p) => p.name === 'weights') ?? false
 
-  // Load available portfolio strategies once.
+  // Keep the weight rows in sync with the symbols field: preserve edited values,
+  // default new symbols to an equal share, drop removed ones.
   useEffect(() => {
-    fetchPortfolioStrategies()
-      .then((list) => {
-        setStrategies(list)
-        if (list.length) setStrategy(list[0].name)
-      })
-      .catch(() => setStrategies([]))
-  }, [])
-
-  // Seed scalar parameter inputs with the selected strategy's defaults.
-  useEffect(() => {
-    setParamValues(seedParamValues(selected))
-  }, [strategy, strategies]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Keep the weight rows in sync with the symbols field.
-  useEffect(() => {
-    const list = symbols
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
+    const list = parseSymbols(symbols)
     setWeights((prev) => {
       const equal = list.length ? 100 / list.length : 0
       const next: Record<string, string> = {}
@@ -77,23 +44,10 @@ export function PortfolioPage() {
     })
   }, [symbols])
 
-  const totalPct = symbolList.reduce((sum, s) => sum + (parseFloat(weights[s]) || 0), 0)
-
-  function setEqualWeights() {
-    const equal = symbolList.length ? 100 / symbolList.length : 0
-    setWeights(Object.fromEntries(symbolList.map((s) => [s, equal.toFixed(2)])))
-  }
-
   function buildParams(): Record<string, unknown> {
     const params = buildScalarParams(selected, paramValues)
     if (hasWeights) {
-      const pcts = symbolList.map((s) => parseFloat(weights[s]) || 0)
-      const total = pcts.reduce((a, b) => a + b, 0)
-      const weightMap: Record<string, number> = {}
-      symbolList.forEach((s, i) => {
-        weightMap[toVtSymbol(s, exchange)] = total > 0 ? pcts[i] / total : 1 / symbolList.length
-      })
-      params.weights = weightMap
+      params.weights = normalizeWeights(symbolList, weights, exchange)
     }
     return params
   }
@@ -155,30 +109,13 @@ export function PortfolioPage() {
           onChange={(name, value) => setParamValues((prev) => ({ ...prev, [name]: value }))}
         />
 
-        {hasWeights && symbolList.length > 0 && (
-          <div style={{ marginTop: 8 }}>
-            <h3>
-              Weights (%){' '}
-              <button style={{ fontSize: 12, padding: '2px 8px' }} onClick={setEqualWeights}>
-                Equal
-              </button>
-            </h3>
-            {symbolList.map((s) => (
-              <span key={s} style={{ display: 'inline-block', marginRight: 12, marginBottom: 8 }}>
-                <label style={{ fontSize: 18, marginRight: 6 }}>{s}</label>
-                <input
-                  style={{ width: 90 }}
-                  type="number"
-                  value={weights[s] ?? ''}
-                  onChange={(e) => setWeights({ ...weights, [s]: e.target.value })}
-                />
-              </span>
-            ))}
-            <div className="status">
-              Total: {totalPct.toFixed(1)}%
-              {Math.abs(totalPct - 100) > 0.1 ? ' — will be normalized to 100%' : ''}
-            </div>
-          </div>
+        {hasWeights && (
+          <WeightsEditor
+            symbols={symbolList}
+            weights={weights}
+            onChange={(s, value) => setWeights((prev) => ({ ...prev, [s]: value }))}
+            onEqual={() => setWeights(equalPercents(symbolList))}
+          />
         )}
 
         <div>
@@ -190,36 +127,14 @@ export function PortfolioPage() {
         <div style={{ marginTop: 12 }}>
           {result && (
             <>
-              <h3>Allocation</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Symbol</th>
-                    <th>Weight</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(result.weights).map(([sym, w]) => (
-                    <tr key={sym}>
-                      <td>{sym}</td>
-                      <td>{(w * 100).toFixed(1)}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <AllocationTable weights={result.weights} />
               <h3 style={{ marginTop: 16 }}>Portfolio Results</h3>
               <BacktestStatsGrid stats={result.statistics} />
             </>
           )}
         </div>
       </div>
-      {result && (
-        <div className="section">
-          <h2>Results</h2>
-          <BacktestCharts dailyResults={result.daily_results ?? []} />
-          <BacktestMetricsTable stats={result.statistics} />
-        </div>
-      )}
+      {result && <BacktestResults statistics={result.statistics} dailyResults={result.daily_results ?? []} />}
       <SymbolsTable symbols={dbSymbols} onLoad={handleLoadSymbols} />
     </div>
   )
