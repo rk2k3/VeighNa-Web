@@ -43,6 +43,18 @@ export interface PortfolioBacktestResult {
   detail?: string
 }
 
+export interface StrategyParam {
+  name: string
+  default: unknown
+  type: 'int' | 'float' | 'dict' | 'bool' | 'str'
+}
+
+export interface StrategyInfo {
+  name: string
+  class_name: string
+  parameters: StrategyParam[]
+}
+
 export interface SymbolInfo {
   symbol: string
   exchange: string

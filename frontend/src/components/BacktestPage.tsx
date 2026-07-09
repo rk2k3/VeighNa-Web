@@ -1,14 +1,10 @@
-import { useState } from 'react'
-import { runBacktest } from '../api'
-import type { BacktestResult } from '../types'
+import { useEffect, useState } from 'react'
+import { fetchStrategies, runBacktest } from '../api'
+import type { BacktestResult, StrategyInfo } from '../types'
 import { BacktestStatsGrid } from './BacktestStatsGrid'
 import { BacktestCharts } from './BacktestCharts'
 import { BacktestMetricsTable } from './BacktestMetricsTable'
-
-const STRATEGIES = [
-  { value: 'buy_and_hold_strategy', label: 'Buy and Hold' },
-  { value: 'double_ma_strategy', label: 'Double MA' },
-]
+import { ParamInputs, buildScalarParams, seedParamValues } from './ParamInputs'
 
 // Polygon's free tier only serves ~2 years of history, so default to the last year
 function defaultDates() {
@@ -24,18 +20,46 @@ export function BacktestPage() {
   const [start, setStart] = useState(defaultDates().start)
   const [end, setEnd] = useState(defaultDates().end)
   const [capital, setCapital] = useState('100000')
-  const [strategy, setStrategy] = useState(STRATEGIES[0].value)
+
+  const [strategies, setStrategies] = useState<StrategyInfo[]>([])
+  const [strategy, setStrategy] = useState('')
+  const [paramValues, setParamValues] = useState<Record<string, string>>({})
 
   const [status, setStatus] = useState('')
   const [statusColor, setStatusColor] = useState('')
   const [result, setResult] = useState<BacktestResult | null>(null)
+
+  const selected = strategies.find((s) => s.name === strategy)
+
+  // Load available strategies once.
+  useEffect(() => {
+    fetchStrategies()
+      .then((list) => {
+        setStrategies(list)
+        if (list.length) setStrategy(list[0].name)
+      })
+      .catch(() => setStrategies([]))
+  }, [])
+
+  // Seed parameter inputs with the selected strategy's defaults.
+  useEffect(() => {
+    setParamValues(seedParamValues(selected))
+  }, [strategy, strategies]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleRun() {
     setStatus('Running...')
     setStatusColor('')
     setResult(null)
     try {
-      const data = await runBacktest({ symbol, exchange, start, end, strategy, capital: parseFloat(capital) })
+      const data = await runBacktest({
+        symbol,
+        exchange,
+        start,
+        end,
+        strategy,
+        capital: parseFloat(capital),
+        params: buildScalarParams(selected, paramValues),
+      })
       setStatus('Complete')
       setStatusColor('#10b981')
       setResult(data)
@@ -56,12 +80,21 @@ export function BacktestPage() {
           <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
           <input value={capital} onChange={(e) => setCapital(e.target.value)} placeholder="Capital" />
           <select value={strategy} onChange={(e) => setStrategy(e.target.value)}>
-            {STRATEGIES.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
+            {strategies.map((s) => (
+              <option key={s.name} value={s.name}>
+                {s.class_name}
               </option>
             ))}
           </select>
+        </div>
+
+        <ParamInputs
+          strategy={selected}
+          values={paramValues}
+          onChange={(name, value) => setParamValues((prev) => ({ ...prev, [name]: value }))}
+        />
+
+        <div>
           <button onClick={handleRun}>Run Backtest</button>
         </div>
         <div className="status" style={{ color: statusColor }}>

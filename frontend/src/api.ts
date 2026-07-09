@@ -1,4 +1,4 @@
-import type { Account, BacktestResult, Direction, PortfolioBacktestResult, Position, SymbolInfo } from './types'
+import type { Account, BacktestResult, Direction, PortfolioBacktestResult, Position, StrategyInfo, SymbolInfo } from './types'
 
 export const API = import.meta.env.VITE_API_URL ?? ''
 
@@ -55,6 +55,10 @@ export function placeOrder(params: {
   return postJSON<{ vt_orderid: string }>('/order', { ...params, exchange: 'NASDAQ' })
 }
 
+export function fetchStrategies() {
+  return getJSON<StrategyInfo[]>('/strategies')
+}
+
 export function runBacktest(params: {
   symbol: string
   exchange: string
@@ -62,8 +66,13 @@ export function runBacktest(params: {
   end: string
   strategy: string
   capital: number
+  params: Record<string, unknown>
 }) {
-  return postJSON<BacktestResult>('/backtest', { ...params, params: {} })
+  return postJSON<BacktestResult>('/backtest', params)
+}
+
+export function fetchPortfolioStrategies() {
+  return getJSON<StrategyInfo[]>('/portfolio_strategies')
 }
 
 export function runPortfolioBacktest(params: {
@@ -72,6 +81,8 @@ export function runPortfolioBacktest(params: {
   start: string
   end: string
   capital: number
+  strategy: string
+  params: Record<string, unknown>
 }) {
-  return postJSON<PortfolioBacktestResult>('/portfolio_backtest', { ...params, weights: {} })
+  return postJSON<PortfolioBacktestResult>('/portfolio_backtest', params)
 }

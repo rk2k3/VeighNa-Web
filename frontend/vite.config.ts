@@ -15,6 +15,7 @@ export default defineConfig({
       '/strategies': { target: 'http://localhost:8100', changeOrigin: true },
       '/symbols': { target: 'http://localhost:8100', changeOrigin: true },
       '/load_data': { target: 'http://localhost:8100', changeOrigin: true },
+      '/portfolio_strategies': { target: 'http://localhost:8100', changeOrigin: true },
       '/portfolio_backtest': { target: 'http://localhost:8100', changeOrigin: true },
       '/backtest': { target: 'http://localhost:8100', changeOrigin: true },
       '/ws': { target: 'ws://localhost:8100', ws: true },

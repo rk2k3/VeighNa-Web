@@ -39,4 +39,5 @@ class PortfolioBacktestReq(BaseModel):
     start: str
     end: str
     capital: float = 100000
-    weights: dict = {}  # {"AAPL": 0.5, "MSFT": 0.5} — equal if empty
+    strategy: str = "portfolio_hold_strategy"
+    params: dict = {}  # strategy parameters, e.g. {"weights": {"AAPL.NASDAQ": 0.5}, ...}

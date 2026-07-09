@@ -70,7 +70,8 @@ def run_portfolio_backtest(req: PortfolioBacktestReq):
             start=req.start,
             end=req.end,
             capital=req.capital,
-            weights=req.weights,
+            strategy=req.strategy,
+            params=req.params,
         )
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))

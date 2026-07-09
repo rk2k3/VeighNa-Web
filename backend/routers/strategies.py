@@ -3,19 +3,20 @@
 This is where the add/edit-strategy endpoints will live.
 """
 
-import os
-
 from fastapi import APIRouter
 
-router = APIRouter()
+from services import strategy_service
 
-STRATEGIES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "strategies"))
+router = APIRouter()
 
 
 @router.get("/strategies")
 def list_strategies():
-    return [
-        f[:-3]
-        for f in os.listdir(STRATEGIES_DIR)
-        if f.endswith(".py") and f != "__init__.py"
-    ]
+    """Single-symbol (CTA) strategies with their parameters and defaults."""
+    return strategy_service.list_cta_strategies()
+
+
+@router.get("/portfolio_strategies")
+def list_portfolio_strategies():
+    """Portfolio strategies with their parameters and defaults."""
+    return strategy_service.list_portfolio_strategies()
