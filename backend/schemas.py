@@ -41,3 +41,22 @@ class PortfolioBacktestReq(BaseModel):
     capital: float = 100000
     strategy: str = "portfolio_hold_strategy"
     params: dict = {}  # strategy parameters, e.g. {"weights": {"AAPL.NASDAQ": 0.5}, ...}
+
+
+class SavedStrategyReq(BaseModel):
+    """A user-created strategy produced by the Strategy Builder questionnaire.
+
+    ``strategy`` is the module name in the strategies/ folder this config maps
+    to; ``params`` holds the deterministically-derived strategy parameters.
+    """
+
+    name: str
+    goal: str                 # goal key, e.g. "grow"
+    goal_label: str           # human label, e.g. "Grow My Wealth"
+    strategy: str             # mapped strategy module, e.g. "portfolio_mvo_strategy"
+    strategy_label: str       # human label, e.g. "Mean-Variance Optimization (MVO)"
+    universe_label: str       # e.g. "US Large-Cap Growth Stocks"
+    symbols: list[str]
+    exchange: str = "NASDAQ"
+    capital: float = 100000
+    params: dict = {}

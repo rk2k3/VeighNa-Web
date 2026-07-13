@@ -1,4 +1,4 @@
-import type { Account, BacktestResult, Direction, PortfolioBacktestResult, Position, StrategyInfo, SymbolInfo } from './types'
+import type { Account, BacktestResult, Direction, PortfolioBacktestResult, Position, SavedStrategy, SavedStrategyInput, StrategyInfo, SymbolInfo } from './types'
 
 export const API = import.meta.env.VITE_API_URL ?? ''
 
@@ -27,6 +27,20 @@ async function postJSON<T>(path: string, body: unknown): Promise<T> {
 
 async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(API + path)
+  return parseResponse<T>(res)
+}
+
+async function putJSON<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(API + path, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  return parseResponse<T>(res)
+}
+
+async function deleteJSON<T>(path: string): Promise<T> {
+  const res = await fetch(API + path, { method: 'DELETE' })
   return parseResponse<T>(res)
 }
 
@@ -85,4 +99,20 @@ export function runPortfolioBacktest(params: {
   params: Record<string, unknown>
 }) {
   return postJSON<PortfolioBacktestResult>('/portfolio_backtest', params)
+}
+
+export function fetchSavedStrategies() {
+  return getJSON<SavedStrategy[]>('/saved_strategies')
+}
+
+export function createSavedStrategy(strategy: SavedStrategyInput) {
+  return postJSON<SavedStrategy>('/saved_strategies', strategy)
+}
+
+export function updateSavedStrategy(id: string, strategy: SavedStrategyInput) {
+  return putJSON<SavedStrategy>(`/saved_strategies/${id}`, strategy)
+}
+
+export function deleteSavedStrategy(id: string) {
+  return deleteJSON<{ status: string }>(`/saved_strategies/${id}`)
 }

@@ -77,4 +77,23 @@ export type WsMessage = TickMessage | PositionMessage
 
 export type Direction = 'Long' | 'Short'
 
-export type PageName = 'backtest' | 'paper' | 'portfolio'
+export type PageName = 'builder' | 'portfolio' | 'backtest' | 'paper'
+
+/** A user-created strategy produced by the Strategy Builder questionnaire. */
+export interface SavedStrategy {
+  id: string
+  created_at: string
+  name: string
+  goal: string
+  goal_label: string
+  strategy: string
+  strategy_label: string
+  universe_label: string
+  symbols: string[]
+  exchange: string
+  capital: number
+  params: Record<string, number>
+}
+
+/** Fields sent when saving a strategy (server assigns id + created_at). */
+export type SavedStrategyInput = Omit<SavedStrategy, 'id' | 'created_at'>

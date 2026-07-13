@@ -5,12 +5,13 @@ import { AccountPanel } from './components/AccountPanel'
 import { BacktestPage } from './components/BacktestPage'
 import { PaperTradingPage } from './components/PaperTradingPage'
 import { PortfolioPage } from './components/PortfolioPage'
+import { StrategyBuilderPage } from './components/StrategyBuilderPage'
 import { Tabs } from './components/Tabs'
 import { useWebSocket } from './hooks/useWebSocket'
 import type { Account, PageName, Position } from './types'
 
 function App() {
-  const [page, setPage] = useState<PageName>('backtest')
+  const [page, setPage] = useState<PageName>('builder')
   const [account, setAccount] = useState<Account | null>(null)
   const [accountError, setAccountError] = useState(false)
   const [positions, setPositions] = useState<Position[]>([])
@@ -59,11 +60,12 @@ function App() {
 
       <Tabs active={page} onSelect={setPage} />
 
+      {page === 'builder' && <StrategyBuilderPage />}
+      {page === 'portfolio' && <PortfolioPage />}
       {page === 'backtest' && <BacktestPage />}
       {page === 'paper' && (
         <PaperTradingPage lastTick={lastTick} positions={positions} onRefreshPositions={loadPositions} />
       )}
-      {page === 'portfolio' && <PortfolioPage />}
     </>
   )
 }
