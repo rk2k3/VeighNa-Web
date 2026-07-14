@@ -34,6 +34,13 @@ MAX_RETRIES = 4
 # land exactly on the requested end date).
 END_TOLERANCE = timedelta(days=5)
 
+# Likewise on the start side: the requested start often lands on a weekend or
+# holiday, and Polygon's daily timestamps are offset by a few hours, so the
+# first stored bar can sit just after the requested start. Without this, a DB
+# that holds exactly the requested range never satisfies the coverage check and
+# re-downloads on every run.
+START_TOLERANCE = timedelta(days=5)
+
 
 def query_history(req: HistoryRequest) -> list[BarData]:
     api_key = os.getenv("POLYGON_API_KEY", "")
@@ -103,7 +110,7 @@ def ensure_bar_data(symbol: str, exchange: Exchange, interval: Interval,
             overview.symbol == symbol
             and overview.exchange == exchange
             and overview.interval == interval
-            and overview.start <= start
+            and overview.start <= start + START_TOLERANCE
             and overview.end >= end - END_TOLERANCE
         ):
             return 0
