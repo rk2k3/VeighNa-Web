@@ -78,7 +78,10 @@ def _get_class(name: str, base, label: str):
 
 
 def list_cta_strategies() -> list[dict]:
-    return _list_strategies(CtaTemplate)
+    # The DSL interpreter is driven by the AI-strategy flow (its single `dsl`
+    # parameter is a whole rule set, not something to hand-edit), so it's hidden
+    # from the manual single-symbol dropdown.
+    return [s for s in _list_strategies(CtaTemplate) if s["name"] != "dsl_strategy"]
 
 
 def get_cta_strategy_class(name: str):

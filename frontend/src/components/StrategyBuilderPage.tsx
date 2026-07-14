@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { createSavedStrategy, deleteSavedStrategy, fetchSavedStrategies } from '../api'
+import { useState } from 'react'
+import { createSavedStrategy } from '../api'
 import {
   answerLabel,
   buildStrategyConfig,
@@ -7,7 +7,7 @@ import {
   GOALS,
   type Goal,
 } from '../lib/goals'
-import type { SavedStrategy } from '../types'
+import { SavedStrategiesManager } from './SavedStrategiesManager'
 
 type Step = 'goal' | 'questions' | 'review'
 
@@ -18,21 +18,10 @@ export function StrategyBuilderPage() {
   const [capitalText, setCapitalText] = useState('100000')
   const [name, setName] = useState('')
 
-  const [saved, setSaved] = useState<SavedStrategy[]>([])
   const [status, setStatus] = useState('')
   const [statusColor, setStatusColor] = useState('')
-
-  async function loadSaved() {
-    try {
-      setSaved(await fetchSavedStrategies())
-    } catch (e) {
-      console.error(e)
-    }
-  }
-
-  useEffect(() => {
-    loadSaved()
-  }, [])
+  // Bumped after a save so the saved-strategies manager below refreshes.
+  const [savedTick, setSavedTick] = useState(0)
 
   function selectGoal(g: Goal) {
     setGoal(g)
@@ -69,22 +58,13 @@ export function StrategyBuilderPage() {
         capital,
         params,
       })
-      setStatus(`Saved "${name.trim()}". Find it on the Portfolio tab to backtest.`)
+      setStatus(`Saved "${name.trim()}". Find it on the Portfolio Backtest tab to run it.`)
       setStatusColor('#10b981')
-      await loadSaved()
+      setSavedTick((t) => t + 1)
       restart()
     } catch (e) {
       setStatus('Error saving: ' + (e as Error).message)
       setStatusColor('#f43f5e')
-    }
-  }
-
-  async function handleDelete(id: string) {
-    try {
-      await deleteSavedStrategy(id)
-      await loadSaved()
-    } catch (e) {
-      console.error(e)
     }
   }
 
@@ -125,7 +105,7 @@ export function StrategyBuilderPage() {
         </div>
       )}
 
-      <SavedList saved={saved} onDelete={handleDelete} />
+      <SavedStrategiesManager refreshKey={savedTick} sections={['portfolio']} />
     </div>
   )
 }
@@ -300,51 +280,6 @@ function ReviewStep({
         </button>
         <button onClick={onSave}>Save Strategy</button>
       </div>
-    </div>
-  )
-}
-
-// --- Saved strategies list ------------------------------------------------
-
-function SavedList({
-  saved,
-  onDelete,
-}: {
-  saved: SavedStrategy[]
-  onDelete: (id: string) => void
-}) {
-  if (!saved.length) return null
-  return (
-    <div className="section">
-      <h2>Saved Strategies</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Goal</th>
-            <th>Strategy</th>
-            <th>Capital</th>
-            <th>Symbols</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {saved.map((s) => (
-            <tr key={s.id}>
-              <td>{s.name}</td>
-              <td>{s.goal_label}</td>
-              <td>{s.strategy_label}</td>
-              <td>${s.capital.toLocaleString()}</td>
-              <td style={{ color: '#94a3b8', fontSize: 14 }}>{s.symbols.join(', ')}</td>
-              <td>
-                <button className="danger" onClick={() => onDelete(s.id)}>
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   )
 }

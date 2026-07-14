@@ -43,6 +43,22 @@ class PortfolioBacktestReq(BaseModel):
     params: dict = {}  # strategy parameters, e.g. {"weights": {"AAPL.NASDAQ": 0.5}, ...}
 
 
+class GenerateStrategyReq(BaseModel):
+    """A natural-language trading idea to compile into the DSL."""
+
+    description: str
+    symbol: str | None = None
+    exchange: str | None = None
+
+
+class GeneratePortfolioReq(BaseModel):
+    """A goal + universe to compile into a portfolio-strategy choice."""
+
+    description: str
+    symbols: list[str] = []
+    exchange: str = "NASDAQ"
+
+
 class SavedStrategyReq(BaseModel):
     """A user-created strategy produced by the Strategy Builder questionnaire.
 

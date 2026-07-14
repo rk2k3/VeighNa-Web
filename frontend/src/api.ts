@@ -1,4 +1,4 @@
-import type { Account, BacktestResult, Direction, PortfolioBacktestResult, Position, SavedStrategy, SavedStrategyInput, StrategyInfo, SymbolInfo } from './types'
+import type { Account, BacktestResult, Direction, Dsl, PortfolioBacktestResult, PortfolioChoice, Position, SavedDslStrategy, SavedStrategy, SavedStrategyInput, StrategyInfo, SymbolInfo } from './types'
 
 export const API = import.meta.env.VITE_API_URL ?? ''
 
@@ -115,4 +115,38 @@ export function updateSavedStrategy(id: string, strategy: SavedStrategyInput) {
 
 export function deleteSavedStrategy(id: string) {
   return deleteJSON<{ status: string }>(`/saved_strategies/${id}`)
+}
+
+// --- AI / DSL strategies ---
+
+export function generateStrategy(params: {
+  description: string
+  symbol?: string
+  exchange?: string
+}) {
+  return postJSON<{ dsl: Dsl }>('/generate_strategy', params)
+}
+
+export function generatePortfolioStrategy(params: {
+  description: string
+  symbols: string[]
+  exchange: string
+}) {
+  return postJSON<PortfolioChoice>('/generate_portfolio_strategy', params)
+}
+
+export function fetchDslStrategies() {
+  return getJSON<SavedDslStrategy[]>('/dsl_strategies')
+}
+
+export function createDslStrategy(dsl: Dsl) {
+  return postJSON<SavedDslStrategy>('/dsl_strategies', dsl)
+}
+
+export function updateDslStrategy(id: string, dsl: Dsl) {
+  return putJSON<SavedDslStrategy>(`/dsl_strategies/${id}`, dsl)
+}
+
+export function deleteDslStrategy(id: string) {
+  return deleteJSON<{ status: string }>(`/dsl_strategies/${id}`)
 }

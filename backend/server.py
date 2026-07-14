@@ -13,6 +13,7 @@ from ws import register_market_data_handlers, router as ws_router
 from routers.trading import router as trading_router
 from routers.backtest import router as backtest_router
 from routers.strategies import router as strategies_router
+from routers.dsl import router as dsl_router
 
 
 @asynccontextmanager
@@ -29,6 +30,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 app.include_router(trading_router)
 app.include_router(backtest_router)
 app.include_router(strategies_router)
+app.include_router(dsl_router)
 app.include_router(ws_router)
 
 # Serve the built frontend when present (production), so one process can serve both.
