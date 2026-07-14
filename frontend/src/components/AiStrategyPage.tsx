@@ -18,8 +18,9 @@ const PORTFOLIO_EXAMPLES = [
 ]
 const STOCK_EXAMPLES = [
   'Buy AAPL when the daily RSI drops below 30 and sell when RSI rises above 70. Use an 8% stop loss.',
-  'Golden cross: go long when the 50-day SMA crosses above the 200-day SMA, exit on the death cross.',
+  'Golden cross with short windows: go long when the 20-day SMA crosses above the 50-day SMA, and exit when it crosses back below.',
   'Buy when price crosses above its 20-day EMA; take profit at 15%, stop loss at 5%.',
+  'Build a momentum strategy for AAPL. Go long whenever any of these signals suggest bullish momentum: the 14-day RSI is below 35, the 10-day EMA is above the 30-day EMA, the closing price is trading above its 20-day simple moving average, or the 20-day SMA is above the 50-day SMA. Exit the position whenever any of the following occurs: the 14-day RSI exceeds 70, the closing price drops below its 20-day SMA, or the 10-day EMA falls below the 30-day EMA. Apply an 8% stop loss and a 12% take profit.',
 ]
 
 export function AiStrategyPage() {

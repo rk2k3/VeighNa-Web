@@ -53,9 +53,13 @@ class DslStrategy(CtaTemplate):
         super().__init__(cta_engine, strategy_name, vt_symbol, setting)
 
         max_period = _max_period(self.dsl)
-        # Need at least two extra bars so crossover checks have [-2] and [-1].
-        self.am = ArrayManager(size=max(max_period + 10, 100))
-        self._warmup = max_period + 10
+        # Warm up just enough for the largest indicator to stabilize (recursive
+        # ones like RSI/ATR/EMA need a buffer beyond their period) plus 2 bars for
+        # crossover look-back. A small floor keeps very short strategies sane
+        # without burning a big slice of a 1-year backtest on warmup.
+        size = max(max_period + 20, 40)
+        self.am = ArrayManager(size=size)
+        self._warmup = size
 
         self.direction: str = self.dsl.get("direction", "long")
         self.position_pct: float = float(self.dsl.get("position_pct", 1.0))
