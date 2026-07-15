@@ -1,4 +1,4 @@
-import type { Account } from '../types'
+import type { Account } from '../../types'
 import { StatCard } from './StatCard'
 
 interface AccountPanelProps {

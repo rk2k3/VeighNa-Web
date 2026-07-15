@@ -6,9 +6,9 @@ import {
   fetchSavedStrategies,
   updateDslStrategy,
   updateSavedStrategy,
-} from '../api'
-import { ruleText } from '../lib/dsl'
-import type { SavedDslStrategy, SavedStrategy } from '../types'
+} from '../../api'
+import { ruleText } from '../../lib/dsl'
+import type { SavedDslStrategy, SavedStrategy } from '../../types'
 
 type Section = 'portfolio' | 'stock'
 

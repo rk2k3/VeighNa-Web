@@ -1,4 +1,4 @@
-import type { SymbolInfo } from '../types'
+import type { SymbolInfo } from '../../types'
 
 interface SymbolsTableProps {
   symbols: SymbolInfo[] | null

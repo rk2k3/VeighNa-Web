@@ -2,7 +2,7 @@
 
 Two flavours:
 - generate_dsl: a single-symbol rule-based strategy (the trading DSL), run by
-  strategies/dsl_strategy.py.
+  strategies/cta/dsl_strategy.py.
 - generate_portfolio_strategy: picks one of the portfolio allocation algorithms
   and tunes its parameters to the user's goal.
 
@@ -126,13 +126,21 @@ STRATEGY_LABELS = {
     "min_variance_strategy": "Minimum Variance",
     "max_diversification_strategy": "Maximum Diversification",
     "inverse_volatility_strategy": "Inverse Volatility",
+    "equal_weight_strategy": "Equal Weight (1/N)",
+    "risk_parity_strategy": "Risk Parity (Equal Risk Contribution)",
+    "momentum_strategy": "Momentum (Relative Strength)",
+    "hrp_strategy": "Hierarchical Risk Parity (HRP)",
 }
 
 PORTFOLIO_SYSTEM = """You choose and tune a portfolio-allocation strategy for a set of stocks the user provides.
 
 You do NOT write code. You return ONLY a JSON object. You pick ONE algorithm and set its \
-parameters to match the user's goal. The user already chose the universe (the symbols); \
-you only decide how to allocate across them.
+parameters. The user already chose the universe (the symbols); you only decide how to \
+allocate across them.
+
+If the user explicitly names an algorithm (e.g. "use risk parity", "equal weight", "HRP", \
+"mean-variance optimization", "momentum"), you MUST select that exact algorithm and only \
+tune its parameters. Otherwise, choose the algorithm that best fits the goal they describe.
 
 Algorithms and when to use each (the "strategy" field must be one of these exact strings):
 - "portfolio_mvo_strategy" (Mean-Variance Optimization): maximize risk-adjusted growth. \
@@ -144,6 +152,18 @@ For "grow", "maximize returns", "aggressive". Uses gamma (risk aversion): ~2 agg
 "reduce concentration".
 - "inverse_volatility_strategy" (Inverse Volatility): weight stable assets more, minimal \
 management. For "stable", "passive", "simple". Ignores w_max.
+- "equal_weight_strategy" (Equal Weight, 1/N): give every stock the same weight. A simple, \
+robust baseline. For "simple", "baseline", "no strong view", "treat all equally". Ignores \
+w_max and est_win.
+- "risk_parity_strategy" (Risk Parity / Equal Risk Contribution): each stock contributes \
+equally to total risk, using correlations (a smarter inverse volatility). For "balanced \
+risk", "all-weather", "equal risk". Ignores w_max.
+- "momentum_strategy" (Momentum / Relative Strength): tilt toward recent winners by trailing \
+return; drops losers. For "trend", "momentum", "winners", "growth with trend". Uses w_max to \
+cap concentration.
+- "hrp_strategy" (Hierarchical Risk Parity): cluster correlated stocks and split risk across \
+clusters; robust out-of-sample. For "robust diversification", "clustered", "stable \
+diversification". Ignores w_max.
 
 Parameters:
 - "est_win": trailing days. 1 month = 21, 2 months = 42, 3 months = 63.
@@ -167,8 +187,15 @@ def _portfolio_params(choice: PortfolioChoice) -> dict:
             "w_max": choice.w_max,
             "rebalance_days": choice.rebalance_days,
         }
-    if choice.strategy == "inverse_volatility_strategy":
+    if choice.strategy == "equal_weight_strategy":
+        return {"rebalance_days": choice.rebalance_days}
+    if choice.strategy in (
+        "inverse_volatility_strategy",
+        "risk_parity_strategy",
+        "hrp_strategy",
+    ):
         return {"est_win": choice.est_win, "rebalance_days": choice.rebalance_days}
+    # min_variance, max_diversification, momentum
     return {
         "est_win": choice.est_win,
         "w_max": choice.w_max,

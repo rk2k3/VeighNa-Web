@@ -7,7 +7,7 @@ import {
   GOALS,
   type Goal,
 } from '../lib/goals'
-import { SavedStrategiesManager } from './SavedStrategiesManager'
+import { SavedStrategiesManager } from '../components/common/SavedStrategiesManager'
 
 type Step = 'goal' | 'questions' | 'review'
 

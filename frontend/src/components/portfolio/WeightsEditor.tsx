@@ -1,4 +1,4 @@
-import { totalPercent } from '../lib/weights'
+import { totalPercent } from '../../lib/weights'
 
 /** Per-symbol weight inputs (in %), with a running total and an equal-split reset. */
 export function WeightsEditor({

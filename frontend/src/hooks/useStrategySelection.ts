@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { StrategyInfo } from '../types'
-import { seedParamValues } from '../components/ParamInputs'
+import { seedParamValues } from '../components/backtest/ParamInputs'
 
 /**
  * Loads the available strategies from a fetcher, tracks the selected one,

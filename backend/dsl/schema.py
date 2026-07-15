@@ -2,7 +2,7 @@
 single-symbol strategy.
 
 An LLM produces one of these (never Python), a validator checks it, and the
-generic interpreter strategy (`strategies/dsl_strategy.py`) executes it bar by
+generic interpreter strategy (`strategies/cta/dsl_strategy.py`) executes it bar by
 bar. Keeping the vocabulary small and closed (enumerated indicators/operators)
 is what makes the mapping deterministic and safe: nothing outside this schema
 can ever reach the backtest engine.
@@ -19,6 +19,10 @@ PortfolioStrategyKey = Literal[
     "min_variance_strategy",
     "max_diversification_strategy",
     "inverse_volatility_strategy",
+    "equal_weight_strategy",
+    "risk_parity_strategy",
+    "momentum_strategy",
+    "hrp_strategy",
 ]
 
 

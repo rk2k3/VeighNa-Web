@@ -1,5 +1,5 @@
-import type { BacktestStatistics } from '../types'
-import { StatCard } from './StatCard'
+import type { BacktestStatistics } from '../../types'
+import { StatCard } from '../common/StatCard'
 
 export function BacktestStatsGrid({ stats }: { stats: BacktestStatistics }) {
   const totalReturn = parseFloat(String(stats.total_return))

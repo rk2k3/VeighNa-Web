@@ -1,4 +1,4 @@
-import type { BacktestStatistics } from '../types'
+import type { BacktestStatistics } from '../../types'
 
 const LABELS: Record<string, string> = {
   start_date: 'Start Date',

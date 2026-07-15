@@ -1,4 +1,4 @@
-import type { StrategyInfo, StrategyParam } from '../types'
+import type { StrategyInfo, StrategyParam } from '../../types'
 
 // The `weights` param is rendered by the dedicated per-symbol weights editor,
 // so it's excluded from the generic scalar inputs here.

@@ -1,4 +1,4 @@
-import type { PageName } from '../types'
+import type { PageName } from '../../types'
 
 const TABS: { name: PageName; label: string }[] = [
   { name: 'builder', label: 'Strategy Builder' },

@@ -1,4 +1,4 @@
-import type { BacktestStatistics, DailyResult } from '../types'
+import type { BacktestStatistics, DailyResult } from '../../types'
 import { BacktestCharts } from './BacktestCharts'
 import { BacktestMetricsTable } from './BacktestMetricsTable'
 

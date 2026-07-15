@@ -7,20 +7,57 @@ import {
 } from '../api'
 import { ruleText, riskText } from '../lib/dsl'
 import type { Dsl, PortfolioChoice } from '../types'
-import { SavedStrategiesManager } from './SavedStrategiesManager'
+import { SavedStrategiesManager } from '../components/common/SavedStrategiesManager'
 
 type Mode = 'portfolio' | 'stock'
 
-const PORTFOLIO_EXAMPLES = [
-  'Grow my wealth aggressively over the long term, I can tolerate risk.',
-  'Protect my capital and keep volatility low — this is my safety bucket.',
-  'Spread risk broadly across all these names, minimal management.',
+type Example = { label: string; text: string }
+
+// Two demo flows: describe a GOAL and let the AI pick the allocation method,
+// or NAME a specific method and have it built directly.
+const PORTFOLIO_EXAMPLES: Example[] = [
+  {
+    label: 'Goal → aggressive growth',
+    text: "I'm investing for the long term and can stomach big swings along the way. Grow my wealth as aggressively as these names reasonably allow.",
+  },
+  {
+    label: 'Goal → protect capital',
+    text: "This is my safety bucket — money I can't afford to lose much of over the next couple of years. Keep volatility low and cushion the drawdowns.",
+  },
+  {
+    label: 'Goal → balanced & all-weather',
+    text: 'Build a balanced, all-weather mix where no single stock dominates the risk and performance holds up across different market conditions.',
+  },
+  {
+    label: 'Name it → Risk Parity',
+    text: 'Use a risk parity approach so every stock contributes equally to total portfolio risk. Rebalance monthly.',
+  },
+  {
+    label: 'Name it → Hierarchical Risk Parity',
+    text: 'Allocate using Hierarchical Risk Parity — cluster the correlated names and split risk across the clusters. Rebalance monthly.',
+  },
+  {
+    label: 'Name it → Momentum',
+    text: 'Weight these by momentum, tilting toward the recent winners, and rebalance every month.',
+  },
 ]
-const STOCK_EXAMPLES = [
-  'Buy AAPL when the daily RSI drops below 30 and sell when RSI rises above 70. Use an 8% stop loss.',
-  'Golden cross with short windows: go long when the 20-day SMA crosses above the 50-day SMA, and exit when it crosses back below.',
-  'Buy when price crosses above its 20-day EMA; take profit at 15%, stop loss at 5%.',
-  'Build a momentum strategy for AAPL. Go long whenever any of these signals suggest bullish momentum: the 14-day RSI is below 35, the 10-day EMA is above the 30-day EMA, the closing price is trading above its 20-day simple moving average, or the 20-day SMA is above the 50-day SMA. Exit the position whenever any of the following occurs: the 14-day RSI exceeds 70, the closing price drops below its 20-day SMA, or the 10-day EMA falls below the 30-day EMA. Apply an 8% stop loss and a 12% take profit.',
+const STOCK_EXAMPLES: Example[] = [
+  {
+    label: 'RSI mean reversion',
+    text: 'Buy AAPL when the daily RSI drops below 30 and sell when RSI rises above 70. Use an 8% stop loss.',
+  },
+  {
+    label: 'Golden cross',
+    text: 'Golden cross with short windows: go long when the 20-day SMA crosses above the 50-day SMA, and exit when it crosses back below.',
+  },
+  {
+    label: 'EMA breakout',
+    text: 'Buy when price crosses above its 20-day EMA; take profit at 15%, stop loss at 5%.',
+  },
+  {
+    label: 'Multi-signal momentum',
+    text: 'Build a momentum strategy for AAPL. Go long whenever any of these signals suggest bullish momentum: the 14-day RSI is below 35, the 10-day EMA is above the 30-day EMA, the closing price is trading above its 20-day simple moving average, or the 20-day SMA is above the 50-day SMA. Exit the position whenever any of the following occurs: the 14-day RSI exceeds 70, the closing price drops below its 20-day SMA, or the 10-day EMA falls below the 30-day EMA. Apply an 8% stop loss and a 12% take profit.',
+  },
 ]
 
 export function AiStrategyPage() {
@@ -53,7 +90,7 @@ export function AiStrategyPage() {
         </div>
         <p style={{ color: '#64748b', fontSize: 13, marginTop: 8 }}>
           {mode === 'portfolio'
-            ? 'AI allocates across a set of stocks you choose. Backtest it on the Portfolio Backtest tab.'
+            ? 'AI allocates across a set of stocks you choose — state a goal and it picks the method, or name the method yourself. Backtest it on the Portfolio Backtest tab.'
             : 'AI builds entry/exit rules for one stock. Backtest it on the Stock Backtest tab.'}
         </p>
       </div>
@@ -131,12 +168,16 @@ function PortfolioCreator({ onSaved }: { onSaved: () => void }) {
   return (
     <>
       <div className="section">
-        <h2>Describe Your Portfolio Goal</h2>
+        <h2>Describe Your Goal — or Name a Strategy</h2>
+        <p style={{ color: '#64748b', fontSize: 13, marginTop: 0 }}>
+          Describe what you want and the AI picks a suitable allocation method — or name a
+          specific one (e.g. "risk parity", "equal weight", "HRP") to build it directly.
+        </p>
         <textarea
           style={textareaStyle}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="e.g. Grow my wealth aggressively over the long term; I can tolerate risk."
+          placeholder='e.g. "Grow my wealth aggressively; I can tolerate risk." — or — "Use risk parity, rebalanced monthly."'
         />
         <ExampleButtons examples={PORTFOLIO_EXAMPLES} onPick={setDescription} />
 
@@ -343,18 +384,18 @@ const textareaStyle: React.CSSProperties = {
   fontFamily: 'inherit',
 }
 
-function ExampleButtons({ examples, onPick }: { examples: string[]; onPick: (s: string) => void }) {
+function ExampleButtons({ examples, onPick }: { examples: Example[]; onPick: (s: string) => void }) {
   return (
-    <div style={{ marginTop: 4 }}>
+    <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
       <span style={{ color: '#64748b', fontSize: 13 }}>Try: </span>
       {examples.map((ex, i) => (
         <button
           key={i}
           className="secondary"
           style={{ fontSize: 12, padding: '2px 8px' }}
-          onClick={() => onPick(ex)}
+          onClick={() => onPick(ex.text)}
         >
-          Example {i + 1}
+          {ex.label}
         </button>
       ))}
     </div>

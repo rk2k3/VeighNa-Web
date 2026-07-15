@@ -53,11 +53,12 @@ class DslStrategy(CtaTemplate):
         super().__init__(cta_engine, strategy_name, vt_symbol, setting)
 
         max_period = _max_period(self.dsl)
-        # Warm up just enough for the largest indicator to stabilize (recursive
-        # ones like RSI/ATR/EMA need a buffer beyond their period) plus 2 bars for
-        # crossover look-back. A small floor keeps very short strategies sane
-        # without burning a big slice of a 1-year backtest on warmup.
-        size = max(max_period + 20, 40)
+        # Warm up only as long as the largest indicator actually needs: its period
+        # plus a small margin (crossover look-back needs [-2] and [-1]; recursive
+        # indicators settle within a few bars). A low floor keeps the buffer tiny
+        # so short backtest windows aren't mostly eaten by warmup before the first
+        # trade can happen.
+        size = max(max_period + 5, 20)
         self.am = ArrayManager(size=size)
         self._warmup = size
 

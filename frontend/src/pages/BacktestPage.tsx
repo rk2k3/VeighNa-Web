@@ -4,9 +4,9 @@ import { useStrategySelection } from '../hooks/useStrategySelection'
 import { defaultDates } from '../lib/dates'
 import { riskText, ruleText } from '../lib/dsl'
 import type { BacktestResult, SavedDslStrategy } from '../types'
-import { BacktestResults } from './BacktestResults'
-import { BacktestStatsGrid } from './BacktestStatsGrid'
-import { ParamInputs, buildScalarParams } from './ParamInputs'
+import { BacktestResults } from '../components/backtest/BacktestResults'
+import { BacktestStatsGrid } from '../components/backtest/BacktestStatsGrid'
+import { ParamInputs, buildScalarParams } from '../components/backtest/ParamInputs'
 
 export function BacktestPage() {
   const [start, setStart] = useState(defaultDates().start)

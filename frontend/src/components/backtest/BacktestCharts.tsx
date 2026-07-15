@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import type { DailyResult } from '../types'
+import type { DailyResult } from '../../types'
 
 const AXIS_COLOR = '#64748b'
 const GRID_COLOR = '#1e293b'

@@ -73,21 +73,30 @@ VeighNa/
     .env.example                Template for other developers
     Dockerfile                  Builds frontend + backend into one image
     backend/
-        server.py               FastAPI app: REST + WebSocket, backtests, orders
+        server.py               FastAPI app: wires routers + serves the frontend
+        routers/                Thin HTTP endpoints (trading, backtest, strategies, dsl)
+        services/               Business logic behind the routers
         gateways/
             alpaca_gateway.py    Alpaca gateway for vnpy
+        datafeed/               Polygon market-data loader
+        dsl/                    AI/DSL strategy schema
     frontend/                   Vite + React + TypeScript web UI
         src/
-            components/          Page and shared UI components
-            hooks/               useWebSocket, etc.
+            pages/               One component per tab (Backtest, Portfolio, ...)
+            components/
+                backtest/        Backtest result/chart/param components
+                portfolio/       Allocation, weights, symbols tables
+                common/          Shared UI (StatCard, Tabs, AccountPanel, ...)
+            hooks/               useWebSocket, useStrategySelection
+            lib/                 Pure helpers (dates, weights, dsl, goals)
             api.ts               REST client for the FastAPI backend
             types.ts             Shared TypeScript types
     strategies/
         __init__.py
-        double_ma_strategy.py
-        buy_and_hold_strategy.py
-        testing_strategy.py
-        portfolio_hold_strategy.py
+        cta/                    Single-symbol strategies (subclass CtaTemplate)
+            double_ma_strategy.py, buy_and_hold_strategy.py, dsl_strategy.py, ...
+        portfolio/              Multi-symbol strategies (subclass StrategyTemplate)
+            portfolio_hold_strategy.py, portfolio_mvo_strategy.py, ...
 
 ## Architecture
 

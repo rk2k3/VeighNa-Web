@@ -7,9 +7,9 @@ import {
 } from '../api'
 import { defaultDates } from '../lib/dates'
 import type { PortfolioBacktestResult, SavedStrategy, SavedStrategyInput } from '../types'
-import { AllocationTable } from './AllocationTable'
-import { BacktestResults } from './BacktestResults'
-import { BacktestStatsGrid } from './BacktestStatsGrid'
+import { AllocationTable } from '../components/portfolio/AllocationTable'
+import { BacktestResults } from '../components/backtest/BacktestResults'
+import { BacktestStatsGrid } from '../components/backtest/BacktestStatsGrid'
 
 export function PortfolioPage() {
   const [saved, setSaved] = useState<SavedStrategy[]>([])

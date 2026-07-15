@@ -51,15 +51,15 @@ def _describe(name: str, cls) -> dict:
     return {"name": name, "class_name": cls.__name__, "parameters": params}
 
 
-def _list_strategies(base) -> list[dict]:
+def _list_strategies(subdir: str, base) -> list[dict]:
     _ensure_importable()
     strategies = []
-    for filename in sorted(os.listdir(STRATEGIES_DIR)):
+    for filename in sorted(os.listdir(os.path.join(STRATEGIES_DIR, subdir))):
         if not filename.endswith(".py") or filename == "__init__.py":
             continue
         name = filename[:-3]
         try:
-            module = importlib.import_module(f"strategies.{name}")
+            module = importlib.import_module(f"strategies.{subdir}.{name}")
         except Exception:
             continue
         cls = _find_class(module, base)
@@ -68,9 +68,9 @@ def _list_strategies(base) -> list[dict]:
     return strategies
 
 
-def _get_class(name: str, base, label: str):
+def _get_class(subdir: str, name: str, base, label: str):
     _ensure_importable()
-    module = importlib.import_module(f"strategies.{name}")
+    module = importlib.import_module(f"strategies.{subdir}.{name}")
     cls = _find_class(module, base)
     if cls is None:
         raise RuntimeError(f"'{name}' is not a {label} strategy")
@@ -81,16 +81,16 @@ def list_cta_strategies() -> list[dict]:
     # The DSL interpreter is driven by the AI-strategy flow (its single `dsl`
     # parameter is a whole rule set, not something to hand-edit), so it's hidden
     # from the manual single-symbol dropdown.
-    return [s for s in _list_strategies(CtaTemplate) if s["name"] != "dsl_strategy"]
+    return [s for s in _list_strategies("cta", CtaTemplate) if s["name"] != "dsl_strategy"]
 
 
 def get_cta_strategy_class(name: str):
-    return _get_class(name, CtaTemplate, "single-symbol")
+    return _get_class("cta", name, CtaTemplate, "single-symbol")
 
 
 def list_portfolio_strategies() -> list[dict]:
-    return _list_strategies(PortfolioTemplate)
+    return _list_strategies("portfolio", PortfolioTemplate)
 
 
 def get_portfolio_strategy_class(name: str):
-    return _get_class(name, PortfolioTemplate, "portfolio")
+    return _get_class("portfolio", name, PortfolioTemplate, "portfolio")

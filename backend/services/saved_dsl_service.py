@@ -1,7 +1,7 @@
 """Persistence for saved AI/DSL strategies.
 
 Same flat-JSON approach as saved_strategy_service, but a separate file: these are
-single-symbol rule-based strategies (interpreted by strategies/dsl_strategy.py),
+single-symbol rule-based strategies (interpreted by strategies/cta/dsl_strategy.py),
 distinct from the portfolio strategies produced by the questionnaire.
 """
 

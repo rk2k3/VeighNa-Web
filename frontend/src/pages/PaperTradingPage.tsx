@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { placeOrder, subscribeSymbol } from '../api'
 import type { Direction, Position, TickMessage } from '../types'
-import { PositionsTable } from './PositionsTable'
+import { PositionsTable } from '../components/common/PositionsTable'
 
 interface PaperTradingPageProps {
   lastTick: TickMessage | null
