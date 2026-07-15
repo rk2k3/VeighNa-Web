@@ -1,4 +1,4 @@
-import type { Account, BacktestResult, Direction, Dsl, PortfolioBacktestResult, PortfolioChoice, Position, SavedDslStrategy, SavedStrategy, SavedStrategyInput, StrategyInfo, SymbolInfo } from './types'
+import type { Account, BacktestResult, Direction, Dsl, PortfolioBacktestResult, PortfolioChoice, Position, SavedStockStrategy, SavedPortfolioStrategy, SavedPortfolioStrategyInput, SymbolInfo } from './types'
 
 export const API = import.meta.env.VITE_API_URL ?? ''
 
@@ -69,11 +69,7 @@ export function placeOrder(params: {
   return postJSON<{ vt_orderid: string }>('/order', { ...params, exchange: 'NASDAQ' })
 }
 
-export function fetchStrategies() {
-  return getJSON<StrategyInfo[]>('/strategies')
-}
-
-export function runBacktest(params: {
+export function runStockBacktest(params: {
   symbol: string
   exchange: string
   start: string
@@ -82,11 +78,7 @@ export function runBacktest(params: {
   capital: number
   params: Record<string, unknown>
 }) {
-  return postJSON<BacktestResult>('/backtest', params)
-}
-
-export function fetchPortfolioStrategies() {
-  return getJSON<StrategyInfo[]>('/portfolio_strategies')
+  return postJSON<BacktestResult>('/stock_backtest', params)
 }
 
 export function runPortfolioBacktest(params: {
@@ -101,30 +93,32 @@ export function runPortfolioBacktest(params: {
   return postJSON<PortfolioBacktestResult>('/portfolio_backtest', params)
 }
 
-export function fetchSavedStrategies() {
-  return getJSON<SavedStrategy[]>('/saved_strategies')
+// --- Saved portfolio strategies ---
+
+export function fetchSavedPortfolioStrategies() {
+  return getJSON<SavedPortfolioStrategy[]>('/saved_portfolio_strategies')
 }
 
-export function createSavedStrategy(strategy: SavedStrategyInput) {
-  return postJSON<SavedStrategy>('/saved_strategies', strategy)
+export function createSavedPortfolioStrategy(strategy: SavedPortfolioStrategyInput) {
+  return postJSON<SavedPortfolioStrategy>('/saved_portfolio_strategies', strategy)
 }
 
-export function updateSavedStrategy(id: string, strategy: SavedStrategyInput) {
-  return putJSON<SavedStrategy>(`/saved_strategies/${id}`, strategy)
+export function updateSavedPortfolioStrategy(id: string, strategy: SavedPortfolioStrategyInput) {
+  return putJSON<SavedPortfolioStrategy>(`/saved_portfolio_strategies/${id}`, strategy)
 }
 
-export function deleteSavedStrategy(id: string) {
-  return deleteJSON<{ status: string }>(`/saved_strategies/${id}`)
+export function deleteSavedPortfolioStrategy(id: string) {
+  return deleteJSON<{ status: string }>(`/saved_portfolio_strategies/${id}`)
 }
 
-// --- AI / DSL strategies ---
+// --- AI generation ---
 
-export function generateStrategy(params: {
+export function generateStockStrategy(params: {
   description: string
   symbol?: string
   exchange?: string
 }) {
-  return postJSON<{ dsl: Dsl }>('/generate_strategy', params)
+  return postJSON<{ dsl: Dsl }>('/generate_stock_strategy', params)
 }
 
 export function generatePortfolioStrategy(params: {
@@ -135,18 +129,20 @@ export function generatePortfolioStrategy(params: {
   return postJSON<PortfolioChoice>('/generate_portfolio_strategy', params)
 }
 
-export function fetchDslStrategies() {
-  return getJSON<SavedDslStrategy[]>('/dsl_strategies')
+// --- Saved stock strategies ---
+
+export function fetchSavedStockStrategies() {
+  return getJSON<SavedStockStrategy[]>('/saved_stock_strategies')
 }
 
-export function createDslStrategy(dsl: Dsl) {
-  return postJSON<SavedDslStrategy>('/dsl_strategies', dsl)
+export function createSavedStockStrategy(dsl: Dsl) {
+  return postJSON<SavedStockStrategy>('/saved_stock_strategies', dsl)
 }
 
-export function updateDslStrategy(id: string, dsl: Dsl) {
-  return putJSON<SavedDslStrategy>(`/dsl_strategies/${id}`, dsl)
+export function updateSavedStockStrategy(id: string, dsl: Dsl) {
+  return putJSON<SavedStockStrategy>(`/saved_stock_strategies/${id}`, dsl)
 }
 
-export function deleteDslStrategy(id: string) {
-  return deleteJSON<{ status: string }>(`/dsl_strategies/${id}`)
+export function deleteSavedStockStrategy(id: string) {
+  return deleteJSON<{ status: string }>(`/saved_stock_strategies/${id}`)
 }

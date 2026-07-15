@@ -1,33 +1,23 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  createSavedStrategy,
-  fetchSavedStrategies,
+  createSavedPortfolioStrategy,
+  fetchSavedPortfolioStrategies,
   runPortfolioBacktest,
-  updateSavedStrategy,
+  updateSavedPortfolioStrategy,
 } from '../api'
 import { defaultDates } from '../lib/dates'
-import type { PortfolioBacktestResult, SavedStrategy, SavedStrategyInput } from '../types'
+import { useBacktestRunner } from '../hooks/useBacktestRunner'
+import { useSavedPortfolioConfig } from '../hooks/useSavedPortfolioConfig'
+import type { PortfolioBacktestResult, SavedPortfolioStrategy } from '../types'
 import { AllocationTable } from '../components/portfolio/AllocationTable'
 import { BacktestResults } from '../components/backtest/BacktestResults'
 import { BacktestStatsGrid } from '../components/backtest/BacktestStatsGrid'
 
 export function PortfolioPage() {
-  const [saved, setSaved] = useState<SavedStrategy[]>([])
+  const [saved, setSaved] = useState<SavedPortfolioStrategy[]>([])
   const [selectedId, setSelectedId] = useState('')
   const [start, setStart] = useState(defaultDates().start)
   const [end, setEnd] = useState(defaultDates().end)
-
-  // Editable, autofilled-from-saved config for this run. These seed from the
-  // selected strategy but can be overridden before running (edits are not
-  // written back to the saved strategy).
-  const [capital, setCapital] = useState('')
-  const [symbolsText, setSymbolsText] = useState('')
-  const [params, setParams] = useState<Record<string, string>>({})
-
-  const [status, setStatus] = useState('')
-  const [statusColor, setStatusColor] = useState('')
-  const [running, setRunning] = useState(false)
-  const [result, setResult] = useState<PortfolioBacktestResult | null>(null)
 
   // "Save as new" inline naming.
   const [saveAsName, setSaveAsName] = useState('')
@@ -35,17 +25,15 @@ export function PortfolioPage() {
 
   const selected = saved.find((s) => s.id === selectedId)
 
-  // Reset the editable fields to the selected strategy's saved values.
-  const seedFrom = useCallback((s: SavedStrategy) => {
-    setCapital(String(s.capital))
-    setSymbolsText(s.symbols.join(', '))
-    setParams(Object.fromEntries(Object.entries(s.params).map(([k, v]) => [k, String(v)])))
-  }, [])
+  // Editable config seeded from the selected strategy, plus run plumbing.
+  const config = useSavedPortfolioConfig(selected)
+  const { status, setStatus, statusColor, setStatusColor, running, result, run } =
+    useBacktestRunner<PortfolioBacktestResult>()
 
-  const refreshSaved = useCallback(() => fetchSavedStrategies().then(setSaved), [])
+  const refreshSaved = useCallback(() => fetchSavedPortfolioStrategies().then(setSaved), [])
 
   useEffect(() => {
-    fetchSavedStrategies()
+    fetchSavedPortfolioStrategies()
       .then((list) => {
         setSaved(list)
         if (list.length) setSelectedId(list[0].id)
@@ -53,51 +41,16 @@ export function PortfolioPage() {
       .catch(() => setSaved([]))
   }, [])
 
-  // Parse the editable fields into the concrete values used to run or save.
-  function currentSymbols(): string[] {
-    return symbolsText.split(',').map((s) => s.trim()).filter(Boolean)
-  }
-
-  function currentCapital(): number {
-    return parseFloat(capital) || (selected?.capital ?? 0)
-  }
-
-  function currentParams(): Record<string, number> {
-    const out: Record<string, number> = {}
-    for (const key of Object.keys(selected?.params ?? {})) {
-      const n = parseFloat(params[key])
-      out[key] = Number.isNaN(n) ? selected!.params[key] : n
-    }
-    return out
-  }
-
-  // Whether the editable config differs from the selected strategy's saved values.
-  const dirty =
-    !!selected &&
-    (currentSymbols().join(',') !== selected.symbols.join(',') ||
-      currentCapital() !== selected.capital ||
-      Object.keys(selected.params).some((k) => currentParams()[k] !== selected.params[k]))
-
-  // Build a full saved-strategy payload from the current edits.
-  function buildInput(name: string): SavedStrategyInput {
-    return {
-      name,
-      goal: selected!.goal,
-      goal_label: selected!.goal_label,
-      strategy: selected!.strategy,
-      strategy_label: selected!.strategy_label,
-      universe_label: selected!.universe_label,
-      symbols: currentSymbols(),
-      exchange: selected!.exchange,
-      capital: currentCapital(),
-      params: currentParams(),
-    }
-  }
+  // Close the "save as new" box when the selection changes.
+  useEffect(() => {
+    setShowSaveAs(false)
+    setSaveAsName('')
+  }, [selectedId])
 
   async function handleSaveChanges() {
     if (!selected) return
     try {
-      await updateSavedStrategy(selected.id, buildInput(selected.name))
+      await updateSavedPortfolioStrategy(selected.id, config.buildInput(selected.name))
       await refreshSaved()
       setStatus(`Saved changes to “${selected.name}”.`)
       setStatusColor('#10b981')
@@ -115,7 +68,7 @@ export function PortfolioPage() {
       return
     }
     try {
-      const created = await createSavedStrategy(buildInput(saveAsName.trim()))
+      const created = await createSavedPortfolioStrategy(config.buildInput(saveAsName.trim()))
       await refreshSaved()
       setSelectedId(created.id)
       setShowSaveAs(false)
@@ -128,38 +81,21 @@ export function PortfolioPage() {
     }
   }
 
-  // Autofill whenever the selected strategy changes.
-  useEffect(() => {
-    if (selected) seedFrom(selected)
-    setShowSaveAs(false)
-    setSaveAsName('')
-  }, [selectedId, saved]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function handleRun() {
+  function handleRun() {
     if (!selected) return
-    setRunning(true)
-    setStatus('Running backtest...')
-    setStatusColor('')
-    setResult(null)
-    try {
-      const data = await runPortfolioBacktest({
-        symbols: currentSymbols(),
-        exchange: selected.exchange,
-        start,
-        end,
-        capital: currentCapital(),
-        strategy: selected.strategy,
-        params: currentParams(),
-      })
-      setStatus('Complete')
-      setStatusColor('#10b981')
-      setResult(data)
-    } catch (e) {
-      setStatus('Error: ' + (e as Error).message)
-      setStatusColor('#f43f5e')
-    } finally {
-      setRunning(false)
-    }
+    run(
+      () =>
+        runPortfolioBacktest({
+          symbols: config.currentSymbols(),
+          exchange: selected.exchange,
+          start,
+          end,
+          capital: config.currentCapital(),
+          strategy: selected.strategy,
+          params: config.currentParams(),
+        }),
+      'Running backtest...',
+    )
   }
 
   if (!saved.length) {
@@ -204,9 +140,9 @@ export function PortfolioPage() {
               </label>
               <span style={{ color: '#64748b', fontSize: 13 }}>
                 Autofilled from “{selected.name}”
-                {dirty ? ' — edited' : ''} — edit any value for this run.
+                {config.dirty ? ' — edited' : ''} — edit any value for this run.
               </span>
-              {dirty && (
+              {config.dirty && (
                 <>
                   <button
                     style={{ fontSize: 13, padding: '4px 12px' }}
@@ -224,7 +160,7 @@ export function PortfolioPage() {
                   <button
                     className="secondary"
                     style={{ fontSize: 13, padding: '4px 12px' }}
-                    onClick={() => seedFrom(selected)}
+                    onClick={() => config.seed(selected)}
                   >
                     Reset
                   </button>
@@ -269,8 +205,8 @@ export function PortfolioPage() {
                 <span className="config-key">Symbols</span>
                 <input
                   style={{ width: 380, margin: 0 }}
-                  value={symbolsText}
-                  onChange={(e) => setSymbolsText(e.target.value)}
+                  value={config.symbolsText}
+                  onChange={(e) => config.setSymbolsText(e.target.value)}
                 />
               </div>
               <div className="config-row">
@@ -278,8 +214,8 @@ export function PortfolioPage() {
                 <input
                   type="number"
                   style={{ width: 160, margin: 0 }}
-                  value={capital}
-                  onChange={(e) => setCapital(e.target.value)}
+                  value={config.capital}
+                  onChange={(e) => config.setCapital(e.target.value)}
                 />
               </div>
               {Object.keys(selected.params).map((key) => (
@@ -288,8 +224,10 @@ export function PortfolioPage() {
                   <input
                     type="number"
                     style={{ width: 160, margin: 0 }}
-                    value={params[key] ?? ''}
-                    onChange={(e) => setParams((prev) => ({ ...prev, [key]: e.target.value }))}
+                    value={config.params[key] ?? ''}
+                    onChange={(e) =>
+                      config.setParams((prev) => ({ ...prev, [key]: e.target.value }))
+                    }
                   />
                 </div>
               ))}

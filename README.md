@@ -94,7 +94,7 @@ VeighNa/
     strategies/
         __init__.py
         cta/                    Single-symbol strategies (subclass CtaTemplate)
-            double_ma_strategy.py, buy_and_hold_strategy.py, dsl_strategy.py, ...
+            dsl_strategy.py         AI DSL interpreter (the only single-symbol strategy)
         portfolio/              Multi-symbol strategies (subclass StrategyTemplate)
             portfolio_hold_strategy.py, portfolio_mvo_strategy.py, ...
 

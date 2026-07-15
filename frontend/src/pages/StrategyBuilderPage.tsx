@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createSavedStrategy } from '../api'
+import { createSavedPortfolioStrategy } from '../api'
 import {
   answerLabel,
   buildStrategyConfig,
@@ -46,7 +46,7 @@ export function StrategyBuilderPage() {
     }
     const { capital, params } = buildStrategyConfig(goal, answers)
     try {
-      await createSavedStrategy({
+      await createSavedPortfolioStrategy({
         name: name.trim(),
         goal: goal.key,
         goal_label: goal.title,

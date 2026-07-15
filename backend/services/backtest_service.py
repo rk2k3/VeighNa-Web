@@ -12,7 +12,7 @@ from vnpy_ctastrategy.backtesting import BacktestingEngine
 from vnpy_portfoliostrategy.backtesting import BacktestingEngine as PortfolioBacktestingEngine
 
 from datafeed.polygon_feed import ensure_bar_data
-from services import strategy_service
+from services import strategy_loader_service
 
 RATE = 0.0003
 SLIPPAGE = 0.01
@@ -66,7 +66,7 @@ def run_single_backtest(symbol: str, exchange: str, start: str, end: str,
         capital=capital,
     )
 
-    engine.add_strategy(strategy_service.get_cta_strategy_class(strategy), params)
+    engine.add_strategy(strategy_loader_service.get_cta_strategy_class(strategy), params)
     engine.load_data()
     engine.run_backtesting()
     return _format_result(engine)
@@ -97,7 +97,7 @@ def run_portfolio_backtest(symbols: list[str], exchange: str, start: str, end: s
         capital=capital,
     )
 
-    strategy_class = strategy_service.get_portfolio_strategy_class(strategy)
+    strategy_class = strategy_loader_service.get_portfolio_strategy_class(strategy)
     engine.add_strategy(strategy_class, params)
     engine.load_data()
     engine.run_backtesting()

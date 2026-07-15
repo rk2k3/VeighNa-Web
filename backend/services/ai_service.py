@@ -26,6 +26,14 @@ MODEL = "gemini-flash-lite-latest"
 T = TypeVar("T", bound=BaseModel)
 
 
+class BadPromptError(RuntimeError):
+    """The user's description can't be turned into a strategy — they should rephrase.
+
+    Subclasses RuntimeError so the routers surface it as an HTTP 400, same as any
+    other generation failure; the message tells the user to try again.
+    """
+
+
 def _client() -> genai.Client:
     key = os.getenv("GEMINI_API_KEY")
     if not key:
@@ -33,12 +41,27 @@ def _client() -> genai.Client:
     return genai.Client(api_key=key)
 
 
+def _retry_turn(contents: list, raw: str, reason: str) -> None:
+    """Append the model's bad reply plus a correction request for the next attempt."""
+    contents.append({"role": "model", "parts": [{"text": raw}]})
+    contents.append({
+        "role": "user",
+        "parts": [{"text": f"That JSON was not usable:\n{reason}\n"
+                           "Return ONLY corrected JSON that matches the required shape."}],
+    })
+
+
 def _generate_json(system: str, user: str, schema: Type[T]) -> T:
-    """Ask Gemini for JSON, validate against `schema`, retry once on failure."""
+    """Ask Gemini for JSON, validate against `schema`, retry once on failure.
+
+    The model may also refuse an unusable prompt by returning ``{"error": "..."}``
+    (see the rejection instructions in each system prompt); we surface that as a
+    BadPromptError so the user is asked to rephrase rather than being handed a
+    strategy invented from nonsense.
+    """
     client = _client()
     contents: list = [{"role": "user", "parts": [{"text": user}]}]
 
-    last_error = ""
     for _ in range(2):
         try:
             response = client.models.generate_content(
@@ -55,15 +78,23 @@ def _generate_json(system: str, user: str, schema: Type[T]) -> T:
 
         raw = response.text or ""
         try:
-            return schema.model_validate(json.loads(raw))
-        except (json.JSONDecodeError, ValidationError) as e:
-            last_error = str(e)[:500]
-            contents.append({"role": "model", "parts": [{"text": raw}]})
-            contents.append({
-                "role": "user",
-                "parts": [{"text": f"That JSON failed validation:\n{last_error}\n"
-                                   "Return ONLY corrected JSON that matches the required shape."}],
-            })
+            data = json.loads(raw)
+        except json.JSONDecodeError as e:
+            _retry_turn(contents, raw, str(e)[:500])
+            continue
+
+        # The model rejects prompts it can't turn into a strategy. This is a
+        # definitive verdict on the input, so we do not retry.
+        if isinstance(data, dict) and isinstance(data.get("error"), str) and data["error"].strip():
+            raise BadPromptError(
+                f"Couldn't build a strategy from that — {data['error'].strip()} "
+                "Please rephrase with a clearer request and try again."
+            )
+
+        try:
+            return schema.model_validate(data)
+        except ValidationError as e:
+            _retry_turn(contents, raw, str(e)[:500])
 
     raise RuntimeError("Could not produce a valid strategy from that description")
 
@@ -74,6 +105,12 @@ DSL_SYSTEM = """You translate a plain-English trading idea into a JSON strategy 
 
 You do NOT write code. You return ONLY a JSON object. Every strategy is a single-symbol, \
 long/short rule-based strategy evaluated on daily bars.
+
+If the idea is empty, gibberish, not about trading, or too vague to become concrete \
+entry/exit rules (e.g. "asdf", "hello", "make me rich", "buy some stocks"), do NOT invent \
+a strategy — return ONLY {"error": "<short reason it can't be built>"} instead. A brief but \
+genuine rule like "buy AAPL when RSI drops below 30" IS enough; only reject input you truly \
+cannot interpret as a trading idea.
 
 Vocabulary:
 - Indicators: "CLOSE" (current price, no period), "RSI", "SMA", "EMA", "ATR" (each needs \
@@ -137,6 +174,12 @@ PORTFOLIO_SYSTEM = """You choose and tune a portfolio-allocation strategy for a 
 You do NOT write code. You return ONLY a JSON object. You pick ONE algorithm and set its \
 parameters. The user already chose the universe (the symbols); you only decide how to \
 allocate across them.
+
+If the goal is empty, gibberish, not about investing, or impossible to read as any \
+investment preference (e.g. "asdf", "banana", "hello"), do NOT invent a strategy — return \
+ONLY {"error": "<short reason it can't be built>"} instead. A brief but genuine preference \
+like "grow aggressively" or "keep it safe" IS enough; only reject input you truly cannot \
+interpret as an investment goal.
 
 If the user explicitly names an algorithm (e.g. "use risk parity", "equal weight", "HRP", \
 "mean-variance optimization", "momentum"), you MUST select that exact algorithm and only \

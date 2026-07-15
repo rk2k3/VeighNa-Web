@@ -43,18 +43,6 @@ export interface PortfolioBacktestResult {
   detail?: string
 }
 
-export interface StrategyParam {
-  name: string
-  default: unknown
-  type: 'int' | 'float' | 'dict' | 'bool' | 'str'
-}
-
-export interface StrategyInfo {
-  name: string
-  class_name: string
-  parameters: StrategyParam[]
-}
-
 export interface SymbolInfo {
   symbol: string
   exchange: string
@@ -113,7 +101,7 @@ export interface Dsl {
   position_pct: number
 }
 
-export interface SavedDslStrategy {
+export interface SavedStockStrategy {
   id: string
   created_at: string
   dsl: Dsl
@@ -129,7 +117,7 @@ export interface PortfolioChoice {
 }
 
 /** A user-created strategy produced by the Strategy Builder questionnaire. */
-export interface SavedStrategy {
+export interface SavedPortfolioStrategy {
   id: string
   created_at: string
   name: string
@@ -145,4 +133,4 @@ export interface SavedStrategy {
 }
 
 /** Fields sent when saving a strategy (server assigns id + created_at). */
-export type SavedStrategyInput = Omit<SavedStrategy, 'id' | 'created_at'>
+export type SavedPortfolioStrategyInput = Omit<SavedPortfolioStrategy, 'id' | 'created_at'>

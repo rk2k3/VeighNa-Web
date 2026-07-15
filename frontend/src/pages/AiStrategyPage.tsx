@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import {
-  createDslStrategy,
-  createSavedStrategy,
+  createSavedStockStrategy,
+  createSavedPortfolioStrategy,
   generatePortfolioStrategy,
-  generateStrategy,
+  generateStockStrategy,
 } from '../api'
 import { ruleText, riskText } from '../lib/dsl'
 import type { Dsl, PortfolioChoice } from '../types'
@@ -88,10 +88,10 @@ export function AiStrategyPage() {
             📈 Single-Stock Strategy
           </button>
         </div>
-        <p style={{ color: '#64748b', fontSize: 13, marginTop: 8 }}>
+        <p style={{ color: '#94a3b8', fontSize: 15, marginTop: 8 }}>
           {mode === 'portfolio'
-            ? 'AI allocates across a set of stocks you choose — state a goal and it picks the method, or name the method yourself. Backtest it on the Portfolio Backtest tab.'
-            : 'AI builds entry/exit rules for one stock. Backtest it on the Stock Backtest tab.'}
+            ? 'You choose the stocks; the AI builds a portfolio strategy that decides how to weight them. State a goal and it picks a weight-allocation method for you, or name one yourself. Backtest it on the Portfolio Backtest tab.'
+            : 'You describe an idea; the AI builds a single-stock strategy with concrete entry and exit rules. Backtest it on the Stock Backtest tab.'}
         </p>
       </div>
 
@@ -141,7 +141,7 @@ function PortfolioCreator({ onSaved }: { onSaved: () => void }) {
   async function handleSave() {
     if (!choice) return
     try {
-      await createSavedStrategy({
+      await createSavedPortfolioStrategy({
         name: name.trim() || choice.name,
         goal: 'ai',
         goal_label: goalSummary.trim() || 'AI Generated',
@@ -169,9 +169,10 @@ function PortfolioCreator({ onSaved }: { onSaved: () => void }) {
     <>
       <div className="section">
         <h2>Describe Your Goal — or Name a Strategy</h2>
-        <p style={{ color: '#64748b', fontSize: 13, marginTop: 0 }}>
-          Describe what you want and the AI picks a suitable allocation method — or name a
-          specific one (e.g. "risk parity", "equal weight", "HRP") to build it directly.
+        <p style={{ color: '#94a3b8', fontSize: 15, marginTop: 0 }}>
+          Describe what you want and the AI builds a strategy using a suitable weight-allocation
+          method — or name a specific weight-allocation method (e.g. "risk parity", "equal
+          weight", "HRP") to build it directly.
         </p>
         <textarea
           style={textareaStyle}
@@ -271,7 +272,7 @@ function StockCreator({ onSaved }: { onSaved: () => void }) {
     setStatus('')
     setDsl(null)
     try {
-      const res = await generateStrategy({ description, symbol: symbol.trim() || undefined })
+      const res = await generateStockStrategy({ description, symbol: symbol.trim() || undefined })
       setDsl(res.dsl)
     } catch (e) {
       setStatus((e as Error).message)
@@ -284,7 +285,7 @@ function StockCreator({ onSaved }: { onSaved: () => void }) {
   async function handleSave() {
     if (!dsl) return
     try {
-      await createDslStrategy(dsl)
+      await createSavedStockStrategy(dsl)
       setStatus(`Saved “${dsl.name}”. Open the Stock Backtest tab to run it.`)
       setColor('#10b981')
       setDsl(null)
@@ -300,6 +301,11 @@ function StockCreator({ onSaved }: { onSaved: () => void }) {
     <>
       <div className="section">
         <h2>Describe Your Stock Strategy</h2>
+        <p style={{ color: '#94a3b8', fontSize: 15, marginTop: 0 }}>
+          Describe an entry/exit idea in plain English and the AI builds a single-stock strategy
+          with concrete trading rules — or name the exact indicators and thresholds (e.g. RSI
+          below 30, moving-average crossover) to use.
+        </p>
         <textarea
           style={textareaStyle}
           value={description}
@@ -386,13 +392,13 @@ const textareaStyle: React.CSSProperties = {
 
 function ExampleButtons({ examples, onPick }: { examples: Example[]; onPick: (s: string) => void }) {
   return (
-    <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-      <span style={{ color: '#64748b', fontSize: 13 }}>Try: </span>
+    <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+      <span style={{ color: '#94a3b8', fontSize: 15 }}>Try: </span>
       {examples.map((ex, i) => (
         <button
           key={i}
           className="secondary"
-          style={{ fontSize: 12, padding: '2px 8px' }}
+          style={{ fontSize: 14, padding: '4px 10px' }}
           onClick={() => onPick(ex.text)}
         >
           {ex.label}

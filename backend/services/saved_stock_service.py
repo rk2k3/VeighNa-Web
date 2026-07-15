@@ -1,13 +1,8 @@
-"""Persistence for user-created ("saved") strategies.
+"""Persistence for saved single-stock strategies.
 
-These are distinct from the algorithm implementations in the top-level
-``strategies/`` folder. A saved strategy is a questionnaire result: a named,
-reusable configuration that *links* to one of those algorithms via its
-``strategy`` field (the strategy module name) and carries the concrete
-universe, capital, and parameters produced by the deterministic mapping.
-
-Stored as a flat JSON file so the whole thing survives a restart without
-needing a database. Single shared instance, matching the rest of the app.
+These are the AI-generated, single-symbol rule-based (DSL) strategies, interpreted
+by strategies/cta/dsl_strategy.py. Same flat-JSON approach as its portfolio
+counterpart (saved_portfolio_service), but stored in a separate file.
 """
 
 import json
@@ -17,7 +12,7 @@ from datetime import datetime, timezone
 from threading import Lock
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-STORE_PATH = os.path.join(DATA_DIR, "saved_strategies.json")
+STORE_PATH = os.path.join(DATA_DIR, "saved_dsl_strategies.json")
 
 _lock = Lock()
 
@@ -43,20 +38,11 @@ def list_saved() -> list[dict]:
         return _read_all()
 
 
-def get_saved(strategy_id: str) -> dict | None:
-    with _lock:
-        for item in _read_all():
-            if item["id"] == strategy_id:
-                return item
-    return None
-
-
-def create_saved(payload: dict) -> dict:
-    """Persist a new saved strategy, assigning an id and created_at."""
+def create_saved(dsl: dict) -> dict:
     record = {
         "id": uuid.uuid4().hex,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        **payload,
+        "dsl": dsl,
     }
     with _lock:
         items = _read_all()
@@ -65,18 +51,13 @@ def create_saved(payload: dict) -> dict:
     return record
 
 
-def update_saved(strategy_id: str, payload: dict) -> dict | None:
-    """Overwrite an existing saved strategy, preserving its id and created_at."""
+def update_saved(strategy_id: str, dsl: dict) -> dict | None:
+    """Replace the DSL of an existing record, preserving its id and created_at."""
     with _lock:
         items = _read_all()
         for i, item in enumerate(items):
             if item["id"] == strategy_id:
-                items[i] = {
-                    **item,
-                    **payload,
-                    "id": strategy_id,
-                    "created_at": item["created_at"],
-                }
+                items[i] = {**item, "dsl": dsl}
                 _write_all(items)
                 return items[i]
     return None

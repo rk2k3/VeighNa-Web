@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import {
-  deleteDslStrategy,
-  deleteSavedStrategy,
-  fetchDslStrategies,
-  fetchSavedStrategies,
-  updateDslStrategy,
-  updateSavedStrategy,
+  deleteSavedStockStrategy,
+  deleteSavedPortfolioStrategy,
+  fetchSavedStockStrategies,
+  fetchSavedPortfolioStrategies,
+  updateSavedStockStrategy,
+  updateSavedPortfolioStrategy,
 } from '../../api'
 import { ruleText } from '../../lib/dsl'
-import type { SavedDslStrategy, SavedStrategy } from '../../types'
+import type { SavedStockStrategy, SavedPortfolioStrategy } from '../../types'
 
 type Section = 'portfolio' | 'stock'
 
@@ -27,8 +27,8 @@ export function SavedStrategiesManager({
   refreshKey: number
   sections?: Section[]
 }) {
-  const [portfolios, setPortfolios] = useState<SavedStrategy[]>([])
-  const [stocks, setStocks] = useState<SavedDslStrategy[]>([])
+  const [portfolios, setPortfolios] = useState<SavedPortfolioStrategy[]>([])
+  const [stocks, setStocks] = useState<SavedStockStrategy[]>([])
 
   // The row currently being edited, plus its draft fields.
   const [editId, setEditId] = useState('')
@@ -44,8 +44,8 @@ export function SavedStrategiesManager({
   async function load() {
     try {
       const tasks: Promise<void>[] = []
-      if (showPortfolio) tasks.push(fetchSavedStrategies().then(setPortfolios))
-      if (showStock) tasks.push(fetchDslStrategies().then(setStocks))
+      if (showPortfolio) tasks.push(fetchSavedPortfolioStrategies().then(setPortfolios))
+      if (showStock) tasks.push(fetchSavedStockStrategies().then(setStocks))
       await Promise.all(tasks)
     } catch (e) {
       console.error(e)
@@ -56,7 +56,7 @@ export function SavedStrategiesManager({
     load()
   }, [refreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function startEditPortfolio(s: SavedStrategy) {
+  function startEditPortfolio(s: SavedPortfolioStrategy) {
     setEditId(s.id)
     setDraftName(s.name)
     setDraftGoal(s.goal_label)
@@ -64,14 +64,14 @@ export function SavedStrategiesManager({
     setDraftParams(Object.fromEntries(Object.entries(s.params).map(([k, v]) => [k, String(v)])))
   }
 
-  async function savePortfolio(s: SavedStrategy) {
+  async function savePortfolio(s: SavedPortfolioStrategy) {
     const params: Record<string, number> = {}
     for (const [k, v] of Object.entries(draftParams)) {
       const n = parseFloat(v)
       params[k] = Number.isNaN(n) ? s.params[k] : n
     }
     const symbols = draftSymbols.split(',').map((x) => x.trim()).filter(Boolean)
-    await updateSavedStrategy(s.id, {
+    await updateSavedPortfolioStrategy(s.id, {
       name: draftName.trim() || s.name,
       goal: s.goal,
       goal_label: draftGoal.trim() || s.goal_label,
@@ -87,14 +87,14 @@ export function SavedStrategiesManager({
     await load()
   }
 
-  function startEditStock(s: SavedDslStrategy) {
+  function startEditStock(s: SavedStockStrategy) {
     setEditId(s.id)
     setDraftName(s.dsl.name)
     setDraftSymbol(s.dsl.symbol)
   }
 
-  async function saveStock(s: SavedDslStrategy) {
-    await updateDslStrategy(s.id, {
+  async function saveStock(s: SavedStockStrategy) {
+    await updateSavedStockStrategy(s.id, {
       ...s.dsl,
       name: draftName.trim() || s.dsl.name,
       symbol: draftSymbol.trim() || s.dsl.symbol,
@@ -104,12 +104,12 @@ export function SavedStrategiesManager({
   }
 
   async function removePortfolio(id: string) {
-    await deleteSavedStrategy(id)
+    await deleteSavedPortfolioStrategy(id)
     await load()
   }
 
   async function removeStock(id: string) {
-    await deleteDslStrategy(id)
+    await deleteSavedStockStrategy(id)
     await load()
   }
 
