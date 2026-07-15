@@ -16,6 +16,7 @@ import { BacktestStatsGrid } from '../components/backtest/BacktestStatsGrid'
 export function PortfolioPage() {
   const [saved, setSaved] = useState<SavedPortfolioStrategy[]>([])
   const [selectedId, setSelectedId] = useState('')
+  const [loading, setLoading] = useState(true)
   const [start, setStart] = useState(defaultDates().start)
   const [end, setEnd] = useState(defaultDates().end)
 
@@ -39,6 +40,7 @@ export function PortfolioPage() {
         if (list.length) setSelectedId(list[0].id)
       })
       .catch(() => setSaved([]))
+      .finally(() => setLoading(false))
   }, [])
 
   // Close the "save as new" box when the selection changes.
@@ -95,6 +97,15 @@ export function PortfolioPage() {
           params: config.currentParams(),
         }),
       'Running backtest...',
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="section">
+        <h2>Backtest a Saved Strategy</h2>
+        <p style={{ color: '#94a3b8' }}>Loading saved strategies…</p>
+      </div>
     )
   }
 

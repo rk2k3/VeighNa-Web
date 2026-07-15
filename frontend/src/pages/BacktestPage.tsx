@@ -15,6 +15,7 @@ export function BacktestPage() {
   // Saved AI stock strategies — the only thing backtested here.
   const [saved, setSaved] = useState<SavedStockStrategy[]>([])
   const [aiId, setAiId] = useState('')
+  const [loading, setLoading] = useState(true)
   const selectedAi = saved.find((s) => s.id === aiId)
 
   const { status, statusColor, running, result, run } = useBacktestRunner<BacktestResult>()
@@ -26,6 +27,7 @@ export function BacktestPage() {
         if (list.length) setAiId(list[0].id)
       })
       .catch(() => setSaved([]))
+      .finally(() => setLoading(false))
   }, [])
 
   function handleRun() {
@@ -48,7 +50,9 @@ export function BacktestPage() {
       <div className="section">
         <h2>Stock Backtest</h2>
 
-        {saved.length === 0 ? (
+        {loading ? (
+          <p style={{ color: '#64748b' }}>Loading saved strategies…</p>
+        ) : saved.length === 0 ? (
           <p style={{ color: '#64748b' }}>
             No saved stock strategies yet. Create one on the <strong>AI Strategy Builder</strong>{' '}
             tab, then come back here to backtest it.
