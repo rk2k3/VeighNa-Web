@@ -1,7 +1,4 @@
-// Polygon's free tier only serves ~2 years of history, so default to the last year
+// Fixed default window for now: 21 Jul 2025 → 21 Jul 2026.
 export function defaultDates() {
-  const end = new Date()
-  const start = new Date()
-  start.setFullYear(end.getFullYear() - 1)
-  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) }
+  return { start: '2025-07-21', end: '2026-07-21' }
 }

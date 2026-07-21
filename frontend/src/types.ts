@@ -160,15 +160,85 @@ export interface OptimizeRecommendation {
   reasons: string[]
 }
 
+/** Overfitting statistics: PBO (CSCV, search-level) + Deflated Sharpe Ratio. */
+export interface Overfitting {
+  pbo?: number | null
+  deflated_sharpe?: number | null
+  dsr_basis?: 'recommended' | 'peak' // which config DSR was evaluated on
+  selected_sharpe_daily?: number
+  expected_max_sharpe_daily?: number
+  n_configs?: number
+  n_obs?: number
+  note?: string
+}
+
 export interface OptimizeResult {
   kind: 'stock' | 'portfolio'
   target: string
+  seed: number
   param_names: string[]
   in_sample_period: { start: string; end: string }
   out_sample_period: { start: string; end: string }
   baseline: OptimizeRow | null
   recommendation: OptimizeRecommendation | null
+  overfitting: Overfitting | null
   trials: OptimizeRow[]
+}
+
+// --- Walk-forward validation ---
+
+export interface WalkForwardStep {
+  train_period: { start: string; end: string }
+  test_period: { start: string; end: string }
+  params: Record<string, number>
+  train_metric: number | null
+  test_metrics: OptimizeMetrics
+}
+
+export interface WalkForwardResult {
+  kind: 'stock' | 'portfolio'
+  target: string
+  seed: number
+  period: { start: string; end: string }
+  n_windows: number
+  train_windows: number
+  param_names: string[]
+  steps: WalkForwardStep[]
+  equity_curve: { date: string; equity: number }[]
+  walk_forward_efficiency: number | null
+  avg_test_metric: number | null
+  windows_positive: number
+}
+
+// --- Saved optimization run history (audit trail) ---
+
+export interface OptimizeRunSummary {
+  id: string
+  created_at: string
+  type: 'optimization' | 'walk_forward'
+  kind: string
+  strategy_name: string
+  target: string
+  seed: number
+  period: { start?: string; end?: string; split?: string }
+  n_trials?: number
+  recommended_params?: Record<string, number> | null
+  pbo?: number | null
+  deflated_sharpe?: number | null
+  walk_forward_efficiency?: number | null
+  avg_test_metric?: number | null
+  n_windows?: number
+}
+
+export interface OptimizeRunRecord {
+  id: string
+  created_at: string
+  type: 'optimization' | 'walk_forward'
+  kind: 'stock' | 'portfolio'
+  strategy_id: string
+  strategy_name: string
+  request: Record<string, unknown>
+  result: OptimizeResult | WalkForwardResult
 }
 
 export interface SensitivityPoint {

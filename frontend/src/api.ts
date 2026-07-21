@@ -1,4 +1,4 @@
-import type { Account, BacktestResult, Direction, Dsl, OptimizeResult, PortfolioBacktestResult, PortfolioChoice, Position, SavedStockStrategy, SavedPortfolioStrategy, SavedPortfolioStrategyInput, SensitivityResult, SymbolInfo } from './types'
+import type { Account, BacktestResult, Direction, Dsl, OptimizeResult, OptimizeRunRecord, OptimizeRunSummary, PortfolioBacktestResult, PortfolioChoice, Position, SavedStockStrategy, SavedPortfolioStrategy, SavedPortfolioStrategyInput, SensitivityResult, SymbolInfo, WalkForwardResult } from './types'
 
 export const API = import.meta.env.VITE_API_URL ?? ''
 
@@ -101,8 +101,39 @@ export function runOptimization(params: {
   end: string
   n_trials: number
   target: string
+  seed: number
 }) {
   return postJSON<OptimizeResult>('/optimize', params)
+}
+
+export function runWalkForward(params: {
+  kind: 'stock' | 'portfolio'
+  strategy_id: string
+  start: string
+  end: string
+  n_windows: number
+  train_windows: number
+  n_trials: number
+  target: string
+  seed: number
+}) {
+  return postJSON<WalkForwardResult>('/optimize/walk_forward', params)
+}
+
+export function fetchOptimizeRuns() {
+  return getJSON<OptimizeRunSummary[]>('/optimize/runs')
+}
+
+export function fetchOptimizeRun(id: string) {
+  return getJSON<OptimizeRunRecord>(`/optimize/runs/${id}`)
+}
+
+export function deleteOptimizeRun(id: string) {
+  return deleteJSON<{ status: string }>(`/optimize/runs/${id}`)
+}
+
+export function clearOptimizeRuns() {
+  return deleteJSON<{ deleted: number }>('/optimize/runs')
 }
 
 export function runSensitivity(req: {

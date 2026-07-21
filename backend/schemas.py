@@ -69,6 +69,21 @@ class OptimizeReq(BaseModel):
     end: str             # out-of-sample end (ISO date)
     n_trials: int = 20
     target: str = "sharpe_ratio"
+    seed: int = 42       # RNG seed — same seed + inputs reproduce the run
+
+
+class WalkForwardReq(BaseModel):
+    """Walk-forward validation over rolling (train, test) windows."""
+
+    kind: str            # "stock" | "portfolio"
+    strategy_id: str
+    start: str           # ISO date
+    end: str             # ISO date
+    n_windows: int = 4   # number of out-of-sample test folds
+    train_windows: int = 3   # training blocks preceding each test fold
+    n_trials: int = 20
+    target: str = "sharpe_ratio"
+    seed: int = 42
 
 
 class SensitivityReq(BaseModel):
