@@ -1,4 +1,4 @@
-import type { Account, BacktestResult, Direction, Dsl, PortfolioBacktestResult, PortfolioChoice, Position, SavedStockStrategy, SavedPortfolioStrategy, SavedPortfolioStrategyInput, SymbolInfo } from './types'
+import type { Account, BacktestResult, Direction, Dsl, OptimizeResult, PortfolioBacktestResult, PortfolioChoice, Position, SavedStockStrategy, SavedPortfolioStrategy, SavedPortfolioStrategyInput, SensitivityResult, SymbolInfo } from './types'
 
 export const API = import.meta.env.VITE_API_URL ?? ''
 
@@ -91,6 +91,31 @@ export function runPortfolioBacktest(params: {
   params: Record<string, unknown>
 }) {
   return postJSON<PortfolioBacktestResult>('/portfolio_backtest', params)
+}
+
+export function runOptimization(params: {
+  kind: 'stock' | 'portfolio'
+  strategy_id: string
+  start: string
+  split: string
+  end: string
+  n_trials: number
+  target: string
+}) {
+  return postJSON<OptimizeResult>('/optimize', params)
+}
+
+export function runSensitivity(req: {
+  kind: 'stock' | 'portfolio'
+  strategy_id: string
+  start: string
+  split: string
+  end: string
+  params: Record<string, number>
+  target: string
+  steps?: number
+}) {
+  return postJSON<SensitivityResult>('/optimize/sensitivity', req)
 }
 
 // --- Saved portfolio strategies ---

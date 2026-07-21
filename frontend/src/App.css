@@ -5,6 +5,18 @@
   margin-bottom: 20px;
 }
 
+/* Scrollable results table (keeps long trial lists to a fixed height with a
+   pinned header). */
+.scroll-table {
+  max-height: 460px;
+  overflow: auto;
+}
+.scroll-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 /* --- Strategy Builder: goal cards --- */
 .goal-grid {
   display: grid;

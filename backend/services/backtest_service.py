@@ -37,11 +37,14 @@ def _split_symbol(entry: str, default_exchange: str) -> tuple[str, str]:
 
 
 def _format_result(engine) -> dict:
+    # A run that never traded yields no daily curve (calculate_result returns
+    # None); treat that as an empty result with zeroed stats rather than crashing.
     df = engine.calculate_result()
     stats = engine.calculate_statistics(output=False)
+    daily = df.reset_index().to_dict(orient="records") if df is not None else []
     return {
         "statistics": {k: str(v) for k, v in stats.items()},
-        "daily_results": df.reset_index().to_dict(orient="records"),
+        "daily_results": daily,
     }
 
 

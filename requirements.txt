@@ -13,4 +13,5 @@ uvicorn[standard]
 alpaca-py
 requests
 scipy
+optuna
 google-genai

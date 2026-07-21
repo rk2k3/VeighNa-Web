@@ -13,6 +13,7 @@ from ws import register_market_data_handlers, router as ws_router
 from routers.trading import router as trading_router
 from routers.market_data import router as market_data_router
 from routers.backtest import router as backtest_router
+from routers.optimize import router as optimize_router
 from routers.ai import router as ai_router
 from routers.saved_stock import router as saved_stock_router
 from routers.saved_portfolio import router as saved_portfolio_router
@@ -32,6 +33,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 app.include_router(trading_router)
 app.include_router(market_data_router)
 app.include_router(backtest_router)
+app.include_router(optimize_router)
 app.include_router(ai_router)
 app.include_router(saved_stock_router)
 app.include_router(saved_portfolio_router)

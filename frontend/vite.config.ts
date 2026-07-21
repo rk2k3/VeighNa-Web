@@ -19,6 +19,8 @@ export default defineConfig({
       // Backtest execution
       '/stock_backtest': { target: 'http://localhost:8100', changeOrigin: true },
       '/portfolio_backtest': { target: 'http://localhost:8100', changeOrigin: true },
+      // Parameter optimization
+      '/optimize': { target: 'http://localhost:8100', changeOrigin: true },
       // AI generation
       '/generate_stock_strategy': { target: 'http://localhost:8100', changeOrigin: true },
       '/generate_portfolio_strategy': { target: 'http://localhost:8100', changeOrigin: true },

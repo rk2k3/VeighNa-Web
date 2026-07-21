@@ -59,6 +59,31 @@ class GeneratePortfolioReq(BaseModel):
     exchange: str = "NASDAQ"
 
 
+class OptimizeReq(BaseModel):
+    """Parameter optimization over an in-sample / out-of-sample split."""
+
+    kind: str            # "stock" | "portfolio"
+    strategy_id: str     # id of the saved strategy to optimize
+    start: str           # in-sample start (ISO date)
+    split: str           # in-sample/out-of-sample boundary (ISO date)
+    end: str             # out-of-sample end (ISO date)
+    n_trials: int = 20
+    target: str = "sharpe_ratio"
+
+
+class SensitivityReq(BaseModel):
+    """Sweep each parameter around a candidate to check robustness (in-sample)."""
+
+    kind: str            # "stock" | "portfolio"
+    strategy_id: str
+    start: str
+    split: str
+    end: str
+    params: dict = {}    # the candidate's parameter values, keyed by knob name
+    target: str = "sharpe_ratio"
+    steps: int = 9
+
+
 class SavedStrategyReq(BaseModel):
     """A user-created strategy produced by the Strategy Builder questionnaire.
 

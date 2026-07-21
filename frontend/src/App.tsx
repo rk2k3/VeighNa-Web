@@ -3,6 +3,7 @@ import './App.css'
 import { fetchAccount, fetchPositions } from './api'
 import { AccountPanel } from './components/common/AccountPanel'
 import { BacktestPage } from './pages/BacktestPage'
+import { OptimizePage } from './pages/OptimizePage'
 import { PaperTradingPage } from './pages/PaperTradingPage'
 import { AiStrategyPage } from './pages/AiStrategyPage'
 import { PortfolioPage } from './pages/PortfolioPage'
@@ -65,6 +66,7 @@ function App() {
       {page === 'ai' && <AiStrategyPage />}
       {page === 'portfolio' && <PortfolioPage />}
       {page === 'backtest' && <BacktestPage />}
+      {page === 'optimize' && <OptimizePage />}
       {page === 'paper' && (
         <PaperTradingPage lastTick={lastTick} positions={positions} onRefreshPositions={loadPositions} />
       )}

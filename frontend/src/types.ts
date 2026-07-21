@@ -65,7 +65,7 @@ export type WsMessage = TickMessage | PositionMessage
 
 export type Direction = 'Long' | 'Short'
 
-export type PageName = 'builder' | 'ai' | 'portfolio' | 'backtest' | 'paper'
+export type PageName = 'builder' | 'ai' | 'portfolio' | 'backtest' | 'optimize' | 'paper'
 
 // --- AI / DSL strategies ---
 
@@ -134,3 +134,60 @@ export interface SavedPortfolioStrategy {
 
 /** Fields sent when saving a strategy (server assigns id + created_at). */
 export type SavedPortfolioStrategyInput = Omit<SavedPortfolioStrategy, 'id' | 'created_at'>
+
+export interface OptimizeMetrics {
+  sharpe_ratio: number
+  total_return: number
+  annual_return: number
+  max_ddpercent: number
+  total_trade_count: number
+}
+
+export interface OptimizeRow {
+  params: Record<string, number>
+  in_sample: OptimizeMetrics
+  out_sample: OptimizeMetrics
+}
+
+/** The auto-picked robust parameter set (selected in-sample only). */
+export interface OptimizeRecommendation {
+  index: number // row index into `trials` (the in-sample ranking)
+  params: Record<string, number>
+  in_sample: OptimizeMetrics
+  out_sample: OptimizeMetrics
+  robustness_score: number
+  oos_pass: boolean
+  reasons: string[]
+}
+
+export interface OptimizeResult {
+  kind: 'stock' | 'portfolio'
+  target: string
+  param_names: string[]
+  in_sample_period: { start: string; end: string }
+  out_sample_period: { start: string; end: string }
+  baseline: OptimizeRow | null
+  recommendation: OptimizeRecommendation | null
+  trials: OptimizeRow[]
+}
+
+export interface SensitivityPoint {
+  value: number
+  metric: number
+}
+
+export interface SensitivityCurve {
+  name: string
+  current: number
+  points: SensitivityPoint[]
+}
+
+export interface SensitivityResult {
+  target: string
+  candidate: {
+    params: Record<string, number>
+    in_sample: OptimizeMetrics
+    out_sample: OptimizeMetrics
+  }
+  curves: SensitivityCurve[]
+}
