@@ -34,6 +34,7 @@ export interface DailyResult {
 export interface BacktestResult {
   statistics: BacktestStatistics
   daily_results: DailyResult[]
+  analytics?: Analytics | null
 }
 
 export interface PortfolioBacktestResult {
@@ -41,12 +42,122 @@ export interface PortfolioBacktestResult {
   daily_results: DailyResult[]
   weights: Record<string, number>
   detail?: string
+  analytics?: Analytics | null
+}
+
+// --- Post-run analytics (computed server-side from daily results + fills) ---
+
+export interface HistogramBin {
+  x0: number
+  x1: number
+  count: number
+}
+
+export interface Analytics {
+  monthly_returns: { year: number; month: number; return: number }[]
+  drawdown_periods: {
+    start: string
+    trough: string
+    recovery: string | null
+    depth: number
+    days: number
+  }[]
+  return_distribution: {
+    bins: HistogramBin[]
+    mean: number
+    std: number
+    skew: number
+    kurtosis: number
+    var_95: number
+    best: number
+    worst: number
+  } | null
+  rolling_sharpe: { date: string; sharpe: number }[]
+  trade_stats: {
+    count: number
+    win_rate: number
+    profit_factor: number | null
+    avg_win: number
+    avg_loss: number
+    expectancy: number
+    best: number
+    worst: number
+    avg_holding_days: number
+  } | null
+  round_trips: {
+    symbol: string
+    direction: 'long' | 'short'
+    entry_date: string
+    exit_date: string
+    entry_price: number
+    exit_price: number
+    volume: number
+    pnl: number
+    return_pct: number
+    holding_days: number
+  }[]
+  trade_pnls: number[]
+}
+
+// --- Monte Carlo stress test ---
+
+export interface MonteCarloBand {
+  i: number
+  date?: string
+  p05: number
+  p25: number
+  p50: number
+  p75: number
+  p95: number
+}
+
+export interface MonteCarloResult {
+  method: string
+  n_sims: number
+  seed: number
+  capital: number
+  x_axis: string
+  bands: MonteCarloBand[]
+  final_return_hist: HistogramBin[]
+  stats: {
+    median_final_return: number
+    p05_final_return: number
+    p95_final_return: number
+    prob_loss: number
+    median_max_drawdown: number
+    p05_max_drawdown: number
+    prob_dd_worse_20: number
+  }
 }
 
 export interface SymbolInfo {
   symbol: string
   exchange: string
   count: number
+}
+
+// --- Benchmark comparison ---
+
+export interface BenchmarkComparison {
+  excess_return: number
+  beta: number
+  alpha: number
+  correlation: number
+}
+
+export interface Benchmark {
+  symbol: string
+  daily_balances: { date: string; balance: number }[]
+  statistics: { total_return: number; annual_return: number; sharpe_ratio: number; max_ddpercent: number }
+  comparison: BenchmarkComparison | null
+}
+
+/** Metadata for a printable backtest report. */
+export interface ReportMeta {
+  title: string
+  subtitle?: string
+  period: { start: string; end: string }
+  capital: number
 }
 
 export interface TickMessage {
@@ -65,7 +176,7 @@ export type WsMessage = TickMessage | PositionMessage
 
 export type Direction = 'Long' | 'Short'
 
-export type PageName = 'builder' | 'ai' | 'portfolio' | 'backtest' | 'optimize' | 'paper'
+export type PageName = 'builder' | 'ai' | 'portfolio' | 'backtest' | 'compare' | 'optimize' | 'paper'
 
 // --- AI / DSL strategies ---
 

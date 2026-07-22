@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { fetchSavedStockStrategies, runStockBacktest } from '../api'
+import { fetchBenchmark, fetchSavedStockStrategies, runStockBacktest } from '../api'
 import { defaultDates } from '../lib/dates'
 import { riskText, ruleText } from '../lib/dsl'
 import { useBacktestRunner } from '../hooks/useBacktestRunner'
-import type { BacktestResult, SavedStockStrategy } from '../types'
+import type { BacktestResult, Benchmark, SavedStockStrategy } from '../types'
 import { BacktestResults } from '../components/backtest/BacktestResults'
 import { BacktestStatsGrid } from '../components/backtest/BacktestStatsGrid'
 
@@ -19,6 +19,9 @@ export function BacktestPage() {
   const selectedAi = saved.find((s) => s.id === aiId)
 
   const { status, statusColor, running, result, run } = useBacktestRunner<BacktestResult>()
+  const [benchmark, setBenchmark] = useState<Benchmark | null>(null)
+  const [benchmarkStatus, setBenchmarkStatus] = useState('')
+  const [benchSymbol, setBenchSymbol] = useState('SPY')
 
   useEffect(() => {
     fetchSavedStockStrategies()
@@ -29,6 +32,30 @@ export function BacktestPage() {
       .catch(() => setSaved([]))
       .finally(() => setLoading(false))
   }, [])
+
+  // After a backtest, pull a buy-and-hold benchmark (SPY) over the same window.
+  useEffect(() => {
+    setBenchmark(null)
+    setBenchmarkStatus('')
+    if (result?.daily_results?.length && selectedAi) {
+      const curve = result.daily_results.map((d) => ({ date: String(d.date).slice(0, 10), balance: Number(d.balance) }))
+      setBenchmarkStatus('loading')
+      fetchBenchmark({
+        symbol: benchSymbol.trim() || 'SPY',
+        exchange: selectedAi.dsl.exchange,
+        start,
+        end,
+        capital: parseFloat(capital) || 100000,
+        strategy_curve: curve,
+      })
+        .then((b) => {
+          setBenchmark(b)
+          setBenchmarkStatus('')
+        })
+        .catch((e) => setBenchmarkStatus((e as Error).message || 'request failed'))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, benchSymbol])
 
   function handleRun() {
     if (!selectedAi) return
@@ -107,6 +134,38 @@ export function BacktestPage() {
             </div>
 
             <div style={{ marginTop: 12 }}>
+              <label className="question-label">Benchmark</label>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <input
+                  style={{ width: 100 }}
+                  value={benchSymbol}
+                  onChange={(e) => setBenchSymbol(e.target.value.toUpperCase())}
+                  placeholder="SPY"
+                />
+                <button
+                  className={benchSymbol === 'SPY' ? '' : 'secondary'}
+                  style={{ fontSize: 13, padding: '4px 12px' }}
+                  onClick={() => setBenchSymbol('SPY')}
+                >
+                  SPY (market)
+                </button>
+                {selectedAi && (
+                  <button
+                    className={benchSymbol === selectedAi.dsl.symbol ? '' : 'secondary'}
+                    style={{ fontSize: 13, padding: '4px 12px' }}
+                    onClick={() => setBenchSymbol(selectedAi.dsl.symbol)}
+                    title={`Did the timing rules beat just holding ${selectedAi.dsl.symbol}?`}
+                  >
+                    {selectedAi.dsl.symbol} buy & hold
+                  </button>
+                )}
+                <span style={{ color: '#64748b', fontSize: 12 }}>
+                  Compared as buy & hold over the same period.
+                </span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
               <button onClick={handleRun} disabled={running}>
                 {running ? 'Running...' : 'Run Backtest'}
               </button>
@@ -118,7 +177,25 @@ export function BacktestPage() {
           </>
         )}
       </div>
-      {result && <BacktestResults statistics={result.statistics} dailyResults={result.daily_results ?? []} />}
+      {result && (
+        <BacktestResults
+          statistics={result.statistics}
+          dailyResults={result.daily_results ?? []}
+          benchmark={benchmark}
+          benchmarkStatus={benchmarkStatus}
+          analytics={result.analytics}
+          meta={
+            selectedAi
+              ? {
+                  title: selectedAi.dsl.name,
+                  subtitle: `${selectedAi.dsl.symbol} · single-asset`,
+                  period: { start, end },
+                  capital: parseFloat(capital) || 100000,
+                }
+              : undefined
+          }
+        />
+      )}
     </div>
   )
 }

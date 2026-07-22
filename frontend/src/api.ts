@@ -1,4 +1,4 @@
-import type { Account, BacktestResult, Direction, Dsl, OptimizeResult, OptimizeRunRecord, OptimizeRunSummary, PortfolioBacktestResult, PortfolioChoice, Position, SavedStockStrategy, SavedPortfolioStrategy, SavedPortfolioStrategyInput, SensitivityResult, SymbolInfo, WalkForwardResult } from './types'
+import type { Account, BacktestResult, Benchmark, Direction, Dsl, MonteCarloResult, OptimizeResult, OptimizeRunRecord, OptimizeRunSummary, PortfolioBacktestResult, PortfolioChoice, Position, SavedStockStrategy, SavedPortfolioStrategy, SavedPortfolioStrategyInput, SensitivityResult, SymbolInfo, WalkForwardResult } from './types'
 
 export const API = import.meta.env.VITE_API_URL ?? ''
 
@@ -91,6 +91,28 @@ export function runPortfolioBacktest(params: {
   params: Record<string, unknown>
 }) {
   return postJSON<PortfolioBacktestResult>('/portfolio_backtest', params)
+}
+
+export function runMonteCarlo(params: {
+  strategy_curve: { date: string; balance: number }[]
+  method: string
+  n_sims?: number
+  trade_pnls?: number[]
+  block_size?: number
+  seed?: number
+}) {
+  return postJSON<MonteCarloResult>('/montecarlo', params)
+}
+
+export function fetchBenchmark(params: {
+  symbol?: string
+  exchange: string
+  start: string
+  end: string
+  capital: number
+  strategy_curve: { date: string; balance: number }[]
+}) {
+  return postJSON<Benchmark>('/benchmark', params)
 }
 
 export function runOptimization(params: {

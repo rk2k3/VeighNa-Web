@@ -5,6 +5,38 @@
   margin-bottom: 20px;
 }
 
+/* Printable backtest report. Portaled to <body> and parked off-screen so its
+   charts get real dimensions; on print we hide the app and let it flow (so it
+   paginates properly, unlike an absolutely-positioned element). */
+.report-holder {
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  width: 700px;
+  padding: 20px;
+  background: #ffffff;
+  color: #0f172a;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+@media print {
+  #root {
+    display: none !important;
+  }
+  .report-holder {
+    position: static !important;
+    left: auto !important;
+    margin: 0 auto;
+  }
+  .no-print {
+    display: none !important;
+  }
+  @page {
+    margin: 12mm;
+  }
+}
+
 /* Scrollable results table (keeps long trial lists to a fixed height with a
    pinned header). */
 .scroll-table {

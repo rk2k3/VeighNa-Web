@@ -72,6 +72,28 @@ class OptimizeReq(BaseModel):
     seed: int = 42       # RNG seed — same seed + inputs reproduce the run
 
 
+class BenchmarkReq(BaseModel):
+    """Buy-and-hold benchmark over a window, optionally compared to a strategy curve."""
+
+    symbol: str = "SPY"
+    exchange: str = "NASDAQ"
+    start: str
+    end: str
+    capital: float = 100000
+    strategy_curve: list[dict] = []   # [{date, balance}, ...] for comparison metrics
+
+
+class MonteCarloReq(BaseModel):
+    """Resample a backtest's own results to show the range of outcomes."""
+
+    strategy_curve: list[dict]        # [{date, balance}, ...] from the backtest
+    method: str = "block"             # "bootstrap" | "block" | "trades"
+    n_sims: int = 1000
+    trade_pnls: list[float] = []      # round-trip P&Ls, required for method="trades"
+    block_size: int = 10
+    seed: int = 42
+
+
 class WalkForwardReq(BaseModel):
     """Walk-forward validation over rolling (train, test) windows."""
 

@@ -12,7 +12,7 @@ from vnpy_ctastrategy.backtesting import BacktestingEngine
 from vnpy_portfoliostrategy.backtesting import BacktestingEngine as PortfolioBacktestingEngine
 
 from datafeed.polygon_feed import ensure_bar_data
-from services import strategy_loader_service
+from services import analytics_service, strategy_loader_service
 
 RATE = 0.0003
 SLIPPAGE = 0.01
@@ -36,16 +36,36 @@ def _split_symbol(entry: str, default_exchange: str) -> tuple[str, str]:
     return entry, default_exchange
 
 
+def _serialize_trades(engine) -> list[dict]:
+    return [
+        {
+            "symbol": t.symbol,
+            "datetime": str(t.datetime),
+            "direction": t.direction.name,   # LONG / SHORT
+            "offset": t.offset.name,
+            "price": float(t.price),
+            "volume": float(t.volume),
+        }
+        for t in engine.get_all_trades()
+    ]
+
+
 def _format_result(engine) -> dict:
     # A run that never traded yields no daily curve (calculate_result returns
     # None); treat that as an empty result with zeroed stats rather than crashing.
     df = engine.calculate_result()
     stats = engine.calculate_statistics(output=False)
     daily = df.reset_index().to_dict(orient="records") if df is not None else []
-    return {
+    result = {
         "statistics": {k: str(v) for k, v in stats.items()},
         "daily_results": daily,
     }
+    # Post-run analytics are additive: a failure here must not sink the backtest.
+    try:
+        result["analytics"] = analytics_service.compute(daily, _serialize_trades(engine))
+    except Exception:
+        result["analytics"] = None
+    return result
 
 
 def run_single_backtest(symbol: str, exchange: str, start: str, end: str,

@@ -5,6 +5,7 @@ const TABS: { name: PageName; label: string }[] = [
   { name: 'ai', label: 'Strategy Builder' },
   { name: 'portfolio', label: 'Portfolio Backtest' },
   { name: 'backtest', label: 'Single-Asset Backtest' },
+  { name: 'compare', label: 'Compare' },
   { name: 'optimize', label: 'Optimize' },
   { name: 'paper', label: 'Paper Trading' },
 ]

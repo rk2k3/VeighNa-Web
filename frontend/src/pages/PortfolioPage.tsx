@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   createSavedPortfolioStrategy,
+  fetchBenchmark,
   fetchSavedPortfolioStrategies,
   runPortfolioBacktest,
   updateSavedPortfolioStrategy,
@@ -8,7 +9,7 @@ import {
 import { defaultDates } from '../lib/dates'
 import { useBacktestRunner } from '../hooks/useBacktestRunner'
 import { useSavedPortfolioConfig } from '../hooks/useSavedPortfolioConfig'
-import type { PortfolioBacktestResult, SavedPortfolioStrategy } from '../types'
+import type { Benchmark, PortfolioBacktestResult, SavedPortfolioStrategy } from '../types'
 import { AllocationTable } from '../components/portfolio/AllocationTable'
 import { BacktestResults } from '../components/backtest/BacktestResults'
 import { BacktestStatsGrid } from '../components/backtest/BacktestStatsGrid'
@@ -30,8 +31,35 @@ export function PortfolioPage() {
   const config = useSavedPortfolioConfig(selected)
   const { status, setStatus, statusColor, setStatusColor, running, result, run } =
     useBacktestRunner<PortfolioBacktestResult>()
+  const [benchmark, setBenchmark] = useState<Benchmark | null>(null)
+  const [benchmarkStatus, setBenchmarkStatus] = useState('')
+  const [benchSymbol, setBenchSymbol] = useState('SPY')
 
   const refreshSaved = useCallback(() => fetchSavedPortfolioStrategies().then(setSaved), [])
+
+  // After a backtest, pull a buy-and-hold benchmark (SPY) over the same window.
+  useEffect(() => {
+    setBenchmark(null)
+    setBenchmarkStatus('')
+    if (result?.daily_results?.length && selected) {
+      const curve = result.daily_results.map((d) => ({ date: String(d.date).slice(0, 10), balance: Number(d.balance) }))
+      setBenchmarkStatus('loading')
+      fetchBenchmark({
+        symbol: benchSymbol.trim() || 'SPY',
+        exchange: selected.exchange,
+        start,
+        end,
+        capital: selected.capital,
+        strategy_curve: curve,
+      })
+        .then((b) => {
+          setBenchmark(b)
+          setBenchmarkStatus('')
+        })
+        .catch((e) => setBenchmarkStatus((e as Error).message || 'request failed'))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, benchSymbol])
 
   useEffect(() => {
     fetchSavedPortfolioStrategies()
@@ -255,6 +283,35 @@ export function PortfolioPage() {
         </div>
 
         <div style={{ marginTop: 12 }}>
+          <label className="question-label">Benchmark</label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              style={{ width: 100 }}
+              value={benchSymbol}
+              onChange={(e) => setBenchSymbol(e.target.value.toUpperCase())}
+              placeholder="SPY"
+            />
+            <button
+              className={benchSymbol === 'SPY' ? '' : 'secondary'}
+              style={{ fontSize: 13, padding: '4px 12px' }}
+              onClick={() => setBenchSymbol('SPY')}
+            >
+              SPY (market)
+            </button>
+            <button
+              className={benchSymbol === 'QQQ' ? '' : 'secondary'}
+              style={{ fontSize: 13, padding: '4px 12px' }}
+              onClick={() => setBenchSymbol('QQQ')}
+            >
+              QQQ (tech)
+            </button>
+            <span style={{ color: '#64748b', fontSize: 12 }}>
+              Compared as buy & hold over the same period.
+            </span>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 12 }}>
           <button onClick={handleRun} disabled={running}>
             {running ? 'Running...' : 'Run Backtest'}
           </button>
@@ -274,7 +331,23 @@ export function PortfolioPage() {
       </div>
 
       {result && (
-        <BacktestResults statistics={result.statistics} dailyResults={result.daily_results ?? []} />
+        <BacktestResults
+          statistics={result.statistics}
+          dailyResults={result.daily_results ?? []}
+          benchmark={benchmark}
+          benchmarkStatus={benchmarkStatus}
+          analytics={result.analytics}
+          meta={
+            selected
+              ? {
+                  title: selected.name,
+                  subtitle: `${selected.strategy_label} · ${selected.symbols.length} assets`,
+                  period: { start, end },
+                  capital: selected.capital,
+                }
+              : undefined
+          }
+        />
       )}
     </div>
   )
