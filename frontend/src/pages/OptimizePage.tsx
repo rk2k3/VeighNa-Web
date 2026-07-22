@@ -203,7 +203,7 @@ export function OptimizePage() {
             className={`option ${kind === 'stock' ? 'selected' : ''}`}
             onClick={() => setKind('stock')}
           >
-            📈 Single-Stock Strategy
+            📈 Single-Asset Strategy
           </button>
         </div>
 
@@ -211,8 +211,9 @@ export function OptimizePage() {
           <p style={{ color: '#64748b' }}>Loading saved strategies…</p>
         ) : list.length === 0 ? (
           <p style={{ color: '#64748b' }}>
-            No saved {kind === 'portfolio' ? 'portfolio' : 'stock'} strategies yet. Create one on
-            the <strong>AI Strategy Builder</strong> tab first.
+            No saved {kind === 'portfolio' ? 'portfolio' : 'single-asset'} strategies yet. Create one
+            on the <strong>{kind === 'portfolio' ? 'Guided Builder' : 'Strategy Builder'}</strong> tab
+            first.
           </p>
         ) : (
           <>

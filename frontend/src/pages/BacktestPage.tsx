@@ -48,13 +48,13 @@ export function BacktestPage() {
   return (
     <div>
       <div className="section">
-        <h2>Stock Backtest</h2>
+        <h2>Single-Asset Backtest</h2>
 
         {loading ? (
           <p style={{ color: '#64748b' }}>Loading saved strategies…</p>
         ) : saved.length === 0 ? (
           <p style={{ color: '#64748b' }}>
-            No saved stock strategies yet. Create one on the <strong>AI Strategy Builder</strong>{' '}
+            No saved single-asset strategies yet. Create one on the <strong>Strategy Builder</strong>{' '}
             tab, then come back here to backtest it.
           </p>
         ) : (

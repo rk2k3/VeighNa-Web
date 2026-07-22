@@ -1,10 +1,10 @@
 import type { PageName } from '../../types'
 
 const TABS: { name: PageName; label: string }[] = [
-  { name: 'builder', label: 'Strategy Builder' },
-  { name: 'ai', label: 'AI Strategy Builder' },
+  { name: 'builder', label: 'Guided Builder' },
+  { name: 'ai', label: 'Strategy Builder' },
   { name: 'portfolio', label: 'Portfolio Backtest' },
-  { name: 'backtest', label: 'Stock Backtest' },
+  { name: 'backtest', label: 'Single-Asset Backtest' },
   { name: 'optimize', label: 'Optimize' },
   { name: 'paper', label: 'Paper Trading' },
 ]

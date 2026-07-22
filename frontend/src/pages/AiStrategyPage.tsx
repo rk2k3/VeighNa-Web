@@ -69,7 +69,7 @@ export function AiStrategyPage() {
   return (
     <div>
       <div className="section">
-        <h2>Create a Strategy with AI</h2>
+        <h2>Create a Strategy using Natural Language</h2>
         <p style={{ color: '#94a3b8', marginBottom: 12 }}>
           Describe your goal in plain English and let AI build a strategy. Save it, then
           run it from the matching backtest tab.
@@ -85,13 +85,13 @@ export function AiStrategyPage() {
             className={`option ${mode === 'stock' ? 'selected' : ''}`}
             onClick={() => setMode('stock')}
           >
-            📈 Single-Stock Strategy
+            📈 Single-Asset Strategy
           </button>
         </div>
         <p style={{ color: '#94a3b8', fontSize: 15, marginTop: 8 }}>
           {mode === 'portfolio'
             ? 'You choose the stocks; the AI builds a portfolio strategy that decides how to weight them. State a goal and it picks a weight-allocation method for you, or name one yourself. Backtest it on the Portfolio Backtest tab.'
-            : 'You describe an idea; the AI builds a single-stock strategy with concrete entry and exit rules. Backtest it on the Stock Backtest tab.'}
+            : 'You describe an idea; the AI builds a single-asset strategy with concrete entry and exit rules. Backtest it on the Single-Asset Backtest tab.'}
         </p>
       </div>
 
@@ -286,7 +286,7 @@ function StockCreator({ onSaved }: { onSaved: () => void }) {
     if (!dsl) return
     try {
       await createSavedStockStrategy(dsl)
-      setStatus(`Saved “${dsl.name}”. Open the Stock Backtest tab to run it.`)
+      setStatus(`Saved “${dsl.name}”. Open the Single-Asset Backtest tab to run it.`)
       setColor('#10b981')
       setDsl(null)
       setDescription('')
@@ -300,9 +300,9 @@ function StockCreator({ onSaved }: { onSaved: () => void }) {
   return (
     <>
       <div className="section">
-        <h2>Describe Your Stock Strategy</h2>
+        <h2>Describe Your Single-Asset Strategy</h2>
         <p style={{ color: '#94a3b8', fontSize: 15, marginTop: 0 }}>
-          Describe an entry/exit idea in plain English and the AI builds a single-stock strategy
+          Describe an entry/exit idea in plain English and the AI builds a single-asset strategy
           with concrete trading rules — or name the exact indicators and thresholds (e.g. RSI
           below 30, moving-average crossover) to use.
         </p>
@@ -317,7 +317,7 @@ function StockCreator({ onSaved }: { onSaved: () => void }) {
         <div style={{ marginTop: 10 }}>
           <input value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="Symbol" />
           <button onClick={handleGenerate} disabled={generating}>
-            {generating ? 'Generating...' : 'Generate Stock Strategy'}
+            {generating ? 'Generating...' : 'Generate Single-Asset Strategy'}
           </button>
         </div>
         {status && (

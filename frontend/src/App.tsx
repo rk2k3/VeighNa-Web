@@ -56,7 +56,7 @@ function App() {
 
   return (
     <>
-      <h1>Strategy Tester</h1>
+      <h1>Strategy Lab</h1>
 
       <AccountPanel account={account} error={accountError} connected={connected} />
 

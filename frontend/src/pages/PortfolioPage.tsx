@@ -114,7 +114,7 @@ export function PortfolioPage() {
       <div className="section">
         <h2>Backtest a Saved Strategy</h2>
         <p style={{ color: '#94a3b8' }}>
-          You have no saved strategies yet. Head to the <strong>Strategy Builder</strong>{' '}
+          You have no saved strategies yet. Head to the <strong>Guided Builder</strong>{' '}
           tab to create one, then come back here to backtest it.
         </p>
       </div>

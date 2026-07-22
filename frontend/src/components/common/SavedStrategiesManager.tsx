@@ -15,8 +15,8 @@ type Section = 'portfolio' | 'stock'
 const btn = { fontSize: 13, padding: '4px 12px' }
 
 /**
- * Edit/delete surface for saved strategies, shared by the Strategy Builder and
- * AI Strategy Builder tabs. `sections` controls which stores are shown; it
+ * Edit/delete surface for saved strategies, shared by the Guided Builder and
+ * Strategy Builder tabs. `sections` controls which stores are shown; it
  * reloads whenever `refreshKey` changes (bump it after a save).
  * Portfolio rows allow editing name/goal/params; stock rows allow editing name.
  */
@@ -195,7 +195,7 @@ export function SavedStrategiesManager({
 
       {showStock && stocks.length > 0 && (
         <>
-          <h3 style={{ marginTop: 16 }}>Single-Stock Strategies</h3>
+          <h3 style={{ marginTop: 16 }}>Single-Asset Strategies</h3>
           <table>
             <thead>
               <tr>
