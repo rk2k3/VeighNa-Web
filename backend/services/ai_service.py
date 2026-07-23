@@ -156,6 +156,111 @@ def generate_dsl(description: str, symbol: str | None = None,
     return strategy.model_dump()
 
 
+# --- Backtest verdict ------------------------------------------------------
+
+VERDICT_SYSTEM = """You are a quantitative analyst writing a short verdict on a backtest \
+for a client who may not be a quant.
+
+You are given a JSON summary of the results. Write 3-5 plain-English sentences:
+- Lead with the bottom line: did the strategy work, and is the result trustworthy?
+- If benchmark data is present, say whether it beat buy-and-hold and by how much — this \
+matters more than the raw return.
+- Flag statistical weakness honestly: few trades (under ~30) make the metrics unreliable; \
+say so plainly.
+- Mention the dominant risk (worst drawdown, concentration of losses) if the data shows one.
+- If trade statistics are present, you may cite win rate or profit factor when relevant.
+
+Rules: use ONLY numbers present in the JSON — never invent or estimate figures. No headers, \
+no bullet points, no disclaimers about past performance, no investment advice framing. \
+Plain prose only. Round numbers sensibly (e.g. "31%" not "31.11%")."""
+
+
+def _plain_text_verdict(system: str, context: dict) -> str:
+    """One short plain-text paragraph from a JSON context. Not JSON-validated."""
+    client = _client()
+    try:
+        response = client.models.generate_content(
+            model=MODEL,
+            contents=[{"role": "user", "parts": [{"text": json.dumps(context)}]}],
+            config=types.GenerateContentConfig(
+                system_instruction=system,
+                temperature=0.4,
+            ),
+        )
+    except Exception as e:
+        raise RuntimeError(f"Verdict generation failed: {e}")
+    text = (response.text or "").strip()
+    if not text:
+        raise RuntimeError("Verdict generation returned no text")
+    return text
+
+
+def explain_backtest(context: dict) -> str:
+    """One short paragraph interpreting a backtest result."""
+    return _plain_text_verdict(VERDICT_SYSTEM, context)
+
+
+OPTIMIZE_VERDICT_SYSTEM = """You are a quantitative analyst writing a short verdict on a \
+parameter-optimization run (or a walk-forward validation run) for a client who may not be a quant.
+
+You are given a JSON summary. Write 3-5 plain-English sentences ending in a clear \
+recommendation: adopt the recommended parameters, treat them with caution, or don't trust \
+this run.
+
+How to judge an optimization payload:
+- Compare the recommended parameters' out-of-sample result against the baseline (current \
+parameters). Improvement that holds out-of-sample is the point; in-sample improvement alone \
+is not evidence.
+- pbo is the probability of backtest overfitting: under 0.2 is reassuring, around 0.5 is a \
+coin flip, higher is worse than random.
+- deflated_sharpe is the probability the recommended strategy's edge is real after \
+accounting for how many parameter sets were tried: 0.95+ is the usual bar, below 0.5 is weak.
+- The recommendation's reasons list plateau/robustness findings; a warning there matters.
+
+How to judge a walk_forward payload:
+- walk_forward_efficiency is out-of-sample performance as a share of in-sample: above ~0.5 \
+is healthy, near zero or negative means the optimization was fitting noise.
+- windows_positive out of n_windows shows consistency across time.
+
+Rules: use ONLY numbers present in the JSON — never invent figures. No headers, no bullet \
+points, no disclaimers. Plain prose. Round numbers sensibly and express probabilities as \
+percentages."""
+
+
+def explain_optimization(context: dict) -> str:
+    """One short paragraph interpreting an optimization or walk-forward run."""
+    return _plain_text_verdict(OPTIMIZE_VERDICT_SYSTEM, context)
+
+
+MONTECARLO_VERDICT_SYSTEM = """You are a quantitative analyst writing a short verdict on a \
+Monte Carlo stress test of a trading strategy, for a client who may not be a quant.
+
+The simulation resampled the strategy's own backtest results many times to show the range \
+of outcomes it could have produced. You are given a JSON summary. Write 3-5 plain-English \
+sentences:
+- Lead with the bottom line: is this strategy robust to luck, or was the backtest result \
+flattering?
+- If actual_total_return_pct is present, compare it to the simulated distribution \
+(median_final_return, p05/p95): near or below the median means the realized result is \
+typical or conservative; near the 95th percentile means the backtest was a lucky draw and \
+expectations should be tempered.
+- Interpret the risk numbers: prob_loss is the share of simulations that ended below the \
+starting capital — describe it as "ending at a loss" or "below the starting capital", NEVER \
+as "total loss". median_max_drawdown and prob_dd_worse_20 (share of simulations whose worst \
+drawdown exceeded 20%) describe drawdown risk. High drawdown probabilities matter even when \
+the median return looks good.
+- The method matters: "trades" only shuffles trade order (sequence risk); "block" and \
+"bootstrap" resample daily returns.
+
+Rules: use ONLY numbers present in the JSON — never invent figures. No headers, no bullet \
+points, no disclaimers. Plain prose. Round numbers sensibly."""
+
+
+def explain_montecarlo(context: dict) -> str:
+    """One short paragraph interpreting a Monte Carlo stress test."""
+    return _plain_text_verdict(MONTECARLO_VERDICT_SYSTEM, context)
+
+
 # --- Portfolio strategy selection ----------------------------------------
 
 STRATEGY_LABELS = {

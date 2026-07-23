@@ -128,6 +128,14 @@ export function runOptimization(params: {
   return postJSON<OptimizeResult>('/optimize', params)
 }
 
+export function applyOptimizedParams(params: {
+  kind: 'stock' | 'portfolio'
+  strategy_id: string
+  params: Record<string, number>
+}) {
+  return postJSON<Record<string, unknown>>('/optimize/apply', params)
+}
+
 export function runWalkForward(params: {
   kind: 'stock' | 'portfolio'
   strategy_id: string
@@ -187,6 +195,18 @@ export function updateSavedPortfolioStrategy(id: string, strategy: SavedPortfoli
 
 export function deleteSavedPortfolioStrategy(id: string) {
   return deleteJSON<{ status: string }>(`/saved_portfolio_strategies/${id}`)
+}
+
+export function explainBacktest(context: Record<string, unknown>) {
+  return postJSON<{ verdict: string }>('/explain_backtest', { context })
+}
+
+export function explainOptimization(context: Record<string, unknown>) {
+  return postJSON<{ verdict: string }>('/explain_optimization', { context })
+}
+
+export function explainMonteCarlo(context: Record<string, unknown>) {
+  return postJSON<{ verdict: string }>('/explain_montecarlo', { context })
 }
 
 // --- AI generation ---

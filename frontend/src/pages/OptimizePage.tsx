@@ -12,8 +12,10 @@ import {
   YAxis,
 } from 'recharts'
 import {
+  applyOptimizedParams,
   clearOptimizeRuns,
   deleteOptimizeRun,
+  explainOptimization,
   fetchOptimizeRun,
   fetchOptimizeRuns,
   fetchSavedPortfolioStrategies,
@@ -22,6 +24,7 @@ import {
   runSensitivity,
   runWalkForward,
 } from '../api'
+import { AiVerdictCard } from '../components/common/AiVerdictCard'
 import { defaultDates } from '../lib/dates'
 import type {
   OptimizeMetrics,
@@ -85,6 +88,63 @@ export function OptimizePage() {
   const [runCtx, setRunCtx] = useState<RunCtx | null>(null)
   const [wfResult, setWfResult] = useState<WalkForwardResult | null>(null)
   const [history, setHistory] = useState<OptimizeRunSummary[]>([])
+  const [verdict, setVerdict] = useState('')
+  const [verdictLoading, setVerdictLoading] = useState(false)
+  const [applyStatus, setApplyStatus] = useState('') // '' | 'applying' | 'applied' | 'error: …'
+
+  async function handleApply() {
+    if (!runCtx || !result?.recommendation) return
+    const strategyName =
+      (runCtx.kind === 'portfolio'
+        ? portfolios.find((s) => s.id === runCtx.strategy_id)?.name
+        : stocks.find((s) => s.id === runCtx.strategy_id)?.dsl.name) ?? 'this strategy'
+    if (
+      !window.confirm(
+        `Overwrite the saved parameters of “${strategyName}” with the recommended values? ` +
+          'Future backtests and optimizations will use them as the new baseline.',
+      )
+    )
+      return
+    setApplyStatus('applying')
+    try {
+      await applyOptimizedParams({
+        kind: runCtx.kind,
+        strategy_id: runCtx.strategy_id,
+        params: result.recommendation.params,
+      })
+      setApplyStatus('applied')
+    } catch (e) {
+      setApplyStatus('error: ' + (e as Error).message)
+    }
+  }
+
+  // Plain-English read on the optimization: baseline vs recommendation vs
+  // overfitting stats. Failures just hide the card.
+  useEffect(() => {
+    setVerdict('')
+    setApplyStatus('')
+    if (!result || !result.recommendation) return
+    setVerdictLoading(true)
+    explainOptimization({
+      type: 'optimization',
+      optimized_for: result.target,
+      n_trials: result.trials.length,
+      baseline_current_params: result.baseline
+        ? { in_sample: result.baseline.in_sample, out_sample: result.baseline.out_sample }
+        : null,
+      recommendation: {
+        params: result.recommendation.params,
+        in_sample: result.recommendation.in_sample,
+        out_sample: result.recommendation.out_sample,
+        oos_pass: result.recommendation.oos_pass,
+        reasons: result.recommendation.reasons,
+      },
+      overfitting: result.overfitting,
+    })
+      .then((r) => setVerdict(r.verdict))
+      .catch(() => setVerdict(''))
+      .finally(() => setVerdictLoading(false))
+  }, [result])
 
   const list = kind === 'portfolio' ? portfolios : stocks
 
@@ -299,8 +359,15 @@ export function OptimizePage() {
         )}
       </div>
 
+      {result && <AiVerdictCard loading={verdictLoading} text={verdict} />}
       {result?.recommendation && (
-        <RecommendationCard rec={result.recommendation} target={result.target} seed={result.seed} />
+        <RecommendationCard
+          rec={result.recommendation}
+          target={result.target}
+          seed={result.seed}
+          onApply={runCtx ? handleApply : undefined}
+          applyStatus={applyStatus}
+        />
       )}
       {result?.overfitting && (
         <OverfittingCard overfitting={result.overfitting} nTrials={result.trials.length} />
@@ -368,10 +435,14 @@ function RecommendationCard({
   rec,
   target,
   seed,
+  onApply,
+  applyStatus = '',
 }: {
   rec: OptimizeRecommendation
   target: string
   seed: number
+  onApply?: () => void
+  applyStatus?: string
 }) {
   const tLabel = TARGETS.find((t) => t.value === target)?.label ?? target
   const targetKey = target as keyof OptimizeMetrics
@@ -380,10 +451,30 @@ function RecommendationCard({
       className="section"
       style={{ border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.06)' }}
     >
-      <h3 style={{ marginTop: 0 }}>
-        ✅ Recommended parameters <span style={{ color: '#64748b', fontWeight: 400, fontSize: 14 }}>
-          (row #{rec.index + 1} below · seed {seed})
+      <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <span>
+          ✅ Recommended parameters{' '}
+          <span style={{ color: '#64748b', fontWeight: 400, fontSize: 14 }}>
+            (row #{rec.index + 1} below · seed {seed})
+          </span>
         </span>
+        {onApply && applyStatus !== 'applied' && (
+          <button
+            style={{ fontSize: 13, padding: '4px 14px' }}
+            onClick={onApply}
+            disabled={applyStatus === 'applying'}
+          >
+            {applyStatus === 'applying' ? 'Applying…' : 'Apply to strategy'}
+          </button>
+        )}
+        {applyStatus === 'applied' && (
+          <span style={{ color: '#10b981', fontSize: 14, fontWeight: 500 }}>
+            ✓ Saved — the strategy now uses these parameters
+          </span>
+        )}
+        {applyStatus.startsWith('error') && (
+          <span style={{ color: '#f43f5e', fontSize: 13, fontWeight: 400 }}>{applyStatus}</span>
+        )}
       </h3>
       <p style={{ color: '#94a3b8', fontSize: 14, marginTop: 0 }}>
         Chosen automatically from <strong>in-sample</strong> data by robustness — not the raw
@@ -959,6 +1050,26 @@ function WalkForwardPanel({
   const [trainWindows, setTrainWindows] = useState('3')
   const [running, setRunning] = useState(false)
   const [error, setError] = useState('')
+  const [verdict, setVerdict] = useState('')
+  const [verdictLoading, setVerdictLoading] = useState(false)
+
+  useEffect(() => {
+    setVerdict('')
+    if (!result) return
+    setVerdictLoading(true)
+    explainOptimization({
+      type: 'walk_forward',
+      optimized_for: result.target,
+      walk_forward_efficiency: result.walk_forward_efficiency,
+      avg_out_of_sample_metric: result.avg_test_metric,
+      windows_positive: result.windows_positive,
+      n_windows: result.steps.length,
+      per_window_test_metric: result.steps.map((s) => s.test_metrics?.[result.target as keyof OptimizeMetrics] ?? null),
+    })
+      .then((r) => setVerdict(r.verdict))
+      .catch(() => setVerdict(''))
+      .finally(() => setVerdictLoading(false))
+  }, [result])
 
   async function run() {
     setRunning(true)
@@ -1028,6 +1139,7 @@ function WalkForwardPanel({
           {error}
         </div>
       )}
+      {result && <AiVerdictCard loading={verdictLoading} text={verdict} />}
       {result && <WalkForwardResults result={result} />}
     </div>
   )

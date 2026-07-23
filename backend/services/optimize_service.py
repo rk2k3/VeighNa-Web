@@ -634,6 +634,34 @@ def run_optimization(kind: str, strategy_id: str, start: str, end: str, split: s
     return result
 
 
+# --- public: apply recommended parameters ----------------------------------
+
+def apply_params(kind: str, strategy_id: str, params: dict) -> dict:
+    """Write a set of knob values (keyed by knob name) back into the saved strategy.
+
+    The knob-name → config mapping (DSL paths / portfolio param keys) lives here,
+    not in the frontend, so this is the only safe way to persist a recommendation.
+    Values are coerced to each knob's type; unknown names are ignored.
+    """
+    if kind not in ("stock", "portfolio"):
+        raise RuntimeError("kind must be 'stock' or 'portfolio'")
+    if not params:
+        raise RuntimeError("No parameters to apply")
+    base = _load(kind, strategy_id)
+    knobs, _, _, _ = _runners(kind, base)
+    if not knobs:
+        raise RuntimeError("This strategy has no tunable parameters.")
+
+    cfg = _apply(kind, base, knobs, params)
+    if kind == "stock":
+        updated = saved_stock_service.update_saved(strategy_id, cfg)
+    else:
+        updated = saved_portfolio_service.update_saved(strategy_id, {"params": cfg})
+    if updated is None:
+        raise RuntimeError("Saved strategy not found")
+    return updated
+
+
 # --- public: walk-forward validation --------------------------------------
 
 def _wf_windows(start: str, end: str, n_windows: int, train_windows: int) -> list[tuple]:

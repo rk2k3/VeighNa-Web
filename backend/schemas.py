@@ -59,6 +59,12 @@ class GeneratePortfolioReq(BaseModel):
     exchange: str = "NASDAQ"
 
 
+class ExplainBacktestReq(BaseModel):
+    """Structured backtest summary for the AI to interpret into a short verdict."""
+
+    context: dict = {}
+
+
 class OptimizeReq(BaseModel):
     """Parameter optimization over an in-sample / out-of-sample split."""
 
@@ -81,6 +87,14 @@ class BenchmarkReq(BaseModel):
     end: str
     capital: float = 100000
     strategy_curve: list[dict] = []   # [{date, balance}, ...] for comparison metrics
+
+
+class ApplyParamsReq(BaseModel):
+    """Write recommended parameter values back into a saved strategy."""
+
+    kind: str            # "stock" | "portfolio"
+    strategy_id: str
+    params: dict = {}    # knob name -> value (from an optimization recommendation)
 
 
 class MonteCarloReq(BaseModel):

@@ -45,11 +45,13 @@ export function BacktestReport({
   dailyResults,
   benchmark,
   meta,
+  verdict,
 }: {
   statistics: BacktestStatistics
   dailyResults: DailyResult[]
   benchmark: Benchmark | null
   meta: ReportMeta
+  verdict?: string
 }) {
   const hasBench = !!benchmark && benchmark.daily_balances.length > 0
   const byDate = new Map((benchmark?.daily_balances ?? []).map((p) => [p.date, p.balance]))
@@ -76,6 +78,13 @@ export function BacktestReport({
           {new Date().toLocaleString()}
         </div>
       </div>
+
+      {verdict && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: INK, marginBottom: 4 }}>Executive summary</div>
+          <div style={{ fontSize: 12, color: INK, lineHeight: 1.6 }}>{verdict}</div>
+        </div>
+      )}
 
       {/* Two columns: strategy stats + benchmark */}
       <div style={{ display: 'flex', gap: 24 }}>

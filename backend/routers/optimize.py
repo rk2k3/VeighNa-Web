@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException
 
-from schemas import OptimizeReq, SensitivityReq, WalkForwardReq
+from schemas import ApplyParamsReq, OptimizeReq, SensitivityReq, WalkForwardReq
 from services import optimize_run_service, optimize_service
 
 router = APIRouter()
@@ -38,6 +38,18 @@ def walk_forward(req: WalkForwardReq):
             n_trials=req.n_trials,
             target=req.target,
             seed=req.seed,
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/optimize/apply")
+def apply_params(req: ApplyParamsReq):
+    try:
+        return optimize_service.apply_params(
+            kind=req.kind,
+            strategy_id=req.strategy_id,
+            params=req.params,
         )
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))

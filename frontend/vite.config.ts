@@ -25,6 +25,9 @@ export default defineConfig({
       '/optimize': { target: 'http://localhost:8100', changeOrigin: true },
       // AI generation
       '/generate_stock_strategy': { target: 'http://localhost:8100', changeOrigin: true },
+      '/explain_backtest': { target: 'http://localhost:8100', changeOrigin: true },
+      '/explain_optimization': { target: 'http://localhost:8100', changeOrigin: true },
+      '/explain_montecarlo': { target: 'http://localhost:8100', changeOrigin: true },
       '/generate_portfolio_strategy': { target: 'http://localhost:8100', changeOrigin: true },
       // Saved strategies
       '/saved_stock_strategies': { target: 'http://localhost:8100', changeOrigin: true },

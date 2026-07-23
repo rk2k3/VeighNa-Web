@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Area,
   Bar,
@@ -14,7 +14,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { runMonteCarlo } from '../../api'
+import { explainMonteCarlo, runMonteCarlo } from '../../api'
+import { AiVerdictCard } from '../common/AiVerdictCard'
 import type { DailyResult, MonteCarloResult } from '../../types'
 
 const AXIS = '#64748b'
@@ -58,11 +59,34 @@ export function MonteCarloPanel({
   const [running, setRunning] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<MonteCarloResult | null>(null)
+  const [verdict, setVerdict] = useState('')
+  const [verdictLoading, setVerdictLoading] = useState(false)
 
   const curve = useMemo(
     () => dailyResults.map((d) => ({ date: String(d.date).slice(0, 10), balance: Number(d.balance) })),
     [dailyResults],
   )
+
+  // Interpret the simulation, including how the *actual* backtest outcome sits
+  // inside the simulated distribution (typical result vs lucky draw).
+  useEffect(() => {
+    setVerdict('')
+    if (!result) return
+    const first = curve[0]?.balance
+    const last = curve[curve.length - 1]?.balance
+    const actual = first && last ? Number((((last - first) / first) * 100).toFixed(2)) : null
+    setVerdictLoading(true)
+    explainMonteCarlo({
+      method: result.method,
+      n_sims: result.n_sims,
+      actual_total_return_pct: actual,
+      ...result.stats,
+    })
+      .then((r) => setVerdict(r.verdict))
+      .catch(() => setVerdict(''))
+      .finally(() => setVerdictLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result])
 
   async function run() {
     setRunning(true)
@@ -116,6 +140,9 @@ export function MonteCarloPanel({
 
       {result && s && (
         <div style={{ marginTop: 14 }}>
+          <div style={{ marginBottom: 14 }}>
+            <AiVerdictCard loading={verdictLoading} text={verdict} />
+          </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
             <Tile
               label="Median outcome"
