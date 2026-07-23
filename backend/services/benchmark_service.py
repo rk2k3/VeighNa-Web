@@ -88,11 +88,28 @@ def _compare(strategy_curve: list[dict], benchmark_curve: list[dict]) -> dict | 
 
     s_stats = _curve_stats([b for p in strategy_curve if (b := _num(p.get("balance"))) is not None])
     b_stats = _curve_stats([p["balance"] for p in benchmark_curve])
+
+    # Active (benchmark-relative) return series drives tracking error / info ratio.
+    active = sr - br
+    act_sd = float(active.std(ddof=1))
+    tracking_error = round(act_sd * float(np.sqrt(ANNUAL_DAYS)) * 100, 2) if act_sd > 0 else 0.0
+    info_ratio = round(float(active.mean() / act_sd * float(np.sqrt(ANNUAL_DAYS))), 2) if act_sd > 0 else 0.0
+
+    # Capture ratios: how much of the benchmark's up/down moves the strategy caught.
+    up_bench = float(br[br > 0].sum())
+    down_bench = float(br[br < 0].sum())
+    up_capture = round(float(sr[br > 0].sum()) / up_bench * 100, 1) if up_bench > 0 else None
+    down_capture = round(float(sr[br < 0].sum()) / down_bench * 100, 1) if down_bench < 0 else None
+
     return {
         "excess_return": round(float(s_stats["total_return"] - b_stats["total_return"]), 2),
         "beta": round(beta, 2),
         "alpha": round(float(s_stats["annual_return"] - beta * b_stats["annual_return"]), 2),
         "correlation": round(corr, 2),
+        "tracking_error": tracking_error,
+        "information_ratio": info_ratio,
+        "up_capture": up_capture,
+        "down_capture": down_capture,
     }
 
 

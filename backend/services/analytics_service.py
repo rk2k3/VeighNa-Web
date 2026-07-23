@@ -108,6 +108,8 @@ def return_distribution(rets: np.ndarray) -> dict | None:
         return None
     pct = rets * 100
     counts, edges = np.histogram(pct, bins=HISTOGRAM_BINS)
+    var_95 = float(np.percentile(pct, 5))
+    tail = pct[pct <= var_95]  # the worst 5% of days
     return {
         "bins": [
             {"x0": round(float(edges[i]), 3), "x1": round(float(edges[i + 1]), 3), "count": int(c)}
@@ -117,9 +119,29 @@ def return_distribution(rets: np.ndarray) -> dict | None:
         "std": round(float(pct.std(ddof=1)), 3),
         "skew": round(float(skew(pct)), 2),
         "kurtosis": round(float(kurtosis(pct)), 2),  # excess
-        "var_95": round(float(np.percentile(pct, 5)), 3),
+        "var_95": round(var_95, 3),
+        "cvar_95": round(float(tail.mean()) if len(tail) else var_95, 3),  # avg loss beyond VaR
         "best": round(float(pct.max()), 3),
         "worst": round(float(pct.min()), 3),
+    }
+
+
+def risk_ratios(pts: list[tuple[str, float]], rets: np.ndarray) -> dict | None:
+    """Downside-aware ratios institutions expect alongside Sharpe.
+
+    Sortino uses downside deviation only (upside volatility isn't risk); Calmar
+    is annualised return over the worst drawdown (return per unit of pain).
+    """
+    if len(rets) < 5 or len(pts) < 2:
+        return None
+    bals = np.array([b for _, b in pts], dtype=float)
+    annual_return = (bals[-1] / bals[0] - 1) / len(rets) * ANNUAL_DAYS
+    max_dd = abs(float((bals / np.maximum.accumulate(bals) - 1).min()))
+    downside = rets[rets < 0]
+    dstd = float(downside.std(ddof=1)) if len(downside) > 1 else 0.0
+    return {
+        "sortino": round(float(rets.mean() / dstd * math.sqrt(ANNUAL_DAYS)), 2) if dstd > 0 else None,
+        "calmar": round(float(annual_return / max_dd), 2) if max_dd > 0 else None,
     }
 
 
@@ -206,6 +228,7 @@ def compute(daily: list[dict], trades: list[dict]) -> dict:
         "monthly_returns": monthly_returns(pts),
         "drawdown_periods": drawdown_periods(pts),
         "return_distribution": return_distribution(rets),
+        "risk_ratios": risk_ratios(pts, rets),
         "rolling_sharpe": rolling_sharpe(dates, rets),
         "trade_stats": trade_stats(trips),
         "round_trips": trips[-200:],  # cap the payload; newest are most relevant

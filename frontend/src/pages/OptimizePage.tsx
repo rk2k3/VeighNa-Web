@@ -91,6 +91,7 @@ export function OptimizePage() {
   const [verdict, setVerdict] = useState('')
   const [verdictLoading, setVerdictLoading] = useState(false)
   const [applyStatus, setApplyStatus] = useState('') // '' | 'applying' | 'applied' | 'error: …'
+  const [optTab, setOptTab] = useState<'rankings' | 'robustness' | 'walkforward'>('rankings')
 
   async function handleApply() {
     if (!runCtx || !result?.recommendation) return
@@ -359,6 +360,8 @@ export function OptimizePage() {
         )}
       </div>
 
+      {/* Pinned "the answer": verdict, the recommended params (with Apply), and
+          how much to trust them. These are read together, so never behind a tab. */}
       {result && <AiVerdictCard loading={verdictLoading} text={verdict} />}
       {result?.recommendation && (
         <RecommendationCard
@@ -372,36 +375,69 @@ export function OptimizePage() {
       {result?.overfitting && (
         <OverfittingCard overfitting={result.overfitting} nTrials={result.trials.length} />
       )}
-      {result && <OptimizeResults result={result} />}
-      {result && result.trials.length > 0 && (
-        <TrialScatter
-          trials={result.trials}
-          paramNames={result.param_names}
-          target={result.target}
-          recIdx={result.recommendation?.index ?? -1}
-        />
-      )}
-      {result && runCtx && result.trials.length > 0 && (
-        <SensitivityPanel
-          ctx={runCtx}
-          trials={result.trials}
-          defaultIdx={result.recommendation?.index ?? 0}
-        />
-      )}
 
+      {/* Tabbed evidence: the ranked trials, robustness, and walk-forward. */}
       {!loading && list.length > 0 && strategyId && (
-        <WalkForwardPanel
-          kind={kind}
-          strategyId={strategyId}
-          start={start}
-          end={end}
-          target={target}
-          nTrials={nTrials}
-          seed={seed}
-          result={wfResult}
-          setResult={setWfResult}
-          onDone={reloadHistory}
-        />
+        <>
+          <div className="result-tabs">
+            {(['rankings', 'robustness', 'walkforward'] as const).map((t) => (
+              <button
+                key={t}
+                className={`result-tab ${optTab === t ? 'active' : ''}`}
+                onClick={() => setOptTab(t)}
+              >
+                {t === 'rankings' ? 'Trial rankings' : t === 'robustness' ? 'Robustness' : 'Walk-forward'}
+              </button>
+            ))}
+          </div>
+
+          {optTab === 'rankings' &&
+            (result ? (
+              <OptimizeResults result={result} />
+            ) : (
+              <p className="section" style={{ color: '#64748b' }}>
+                Run an optimization to see the ranked trials.
+              </p>
+            ))}
+
+          {optTab === 'robustness' &&
+            (result && result.trials.length > 0 ? (
+              <>
+                <TrialScatter
+                  trials={result.trials}
+                  paramNames={result.param_names}
+                  target={result.target}
+                  recIdx={result.recommendation?.index ?? -1}
+                />
+                {runCtx && (
+                  <SensitivityPanel
+                    ctx={runCtx}
+                    trials={result.trials}
+                    defaultIdx={result.recommendation?.index ?? 0}
+                  />
+                )}
+              </>
+            ) : (
+              <p className="section" style={{ color: '#64748b' }}>
+                Run an optimization to explore parameter robustness.
+              </p>
+            ))}
+
+          {optTab === 'walkforward' && (
+            <WalkForwardPanel
+              kind={kind}
+              strategyId={strategyId}
+              start={start}
+              end={end}
+              target={target}
+              nTrials={nTrials}
+              seed={seed}
+              result={wfResult}
+              setResult={setWfResult}
+              onDone={reloadHistory}
+            />
+          )}
+        </>
       )}
 
       <RunHistoryPanel
@@ -481,6 +517,12 @@ function RecommendationCard({
         in-sample peak, and never from the out-of-sample window. That held-out window is only used
         below as a validation check.
       </p>
+      {onApply && applyStatus !== 'applied' && (
+        <p style={{ color: '#f59e0b', fontSize: 13, marginTop: -4, marginBottom: 12 }}>
+          Tip: check the <strong>Walk-forward</strong> tab before applying — it's the strongest test
+          that these parameters hold up out-of-sample.
+        </p>
+      )}
       <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'flex-start' }}>
         <div>
           <div style={{ color: '#64748b', fontSize: 13, marginBottom: 4 }}>Parameters</div>
@@ -1269,29 +1311,43 @@ function RunHistoryPanel({
   onDelete: (id: string) => void
   onClear: () => void
 }) {
+  const [open, setOpen] = useState(false)
   return (
     <div className="section">
-      <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-        Run history
-        <button style={{ fontSize: 12, padding: '2px 10px' }} onClick={onRefresh}>
-          Refresh
+      <h3 style={{ marginTop: 0, marginBottom: open ? undefined : 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          style={{ background: 'transparent', border: 'none', color: '#e2e8f0', cursor: 'pointer', fontSize: 18, fontWeight: 600, padding: 0 }}
+        >
+          {open ? '▾' : '▸'} Run history{' '}
+          <span style={{ color: '#64748b', fontWeight: 400, fontSize: 14 }}>({runs.length})</span>
         </button>
-        {runs.length > 0 && (
-          <button
-            style={{ fontSize: 12, padding: '2px 10px', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e' }}
-            onClick={onClear}
-          >
-            Clear all
-          </button>
+        {open && (
+          <>
+            <button style={{ fontSize: 12, padding: '2px 10px' }} onClick={onRefresh}>
+              Refresh
+            </button>
+            {runs.length > 0 && (
+              <button
+                style={{ fontSize: 12, padding: '2px 10px', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e' }}
+                onClick={onClear}
+              >
+                Clear all
+              </button>
+            )}
+          </>
         )}
       </h3>
-      <p style={{ color: '#94a3b8', fontSize: 14, marginTop: 0 }}>
-        Every optimization and walk-forward run is saved with its seed and inputs, so results are
-        reproducible and auditable. Click a row to reload it.
-      </p>
-      {runs.length === 0 ? (
-        <p style={{ color: '#64748b' }}>No runs yet.</p>
-      ) : (
+      {open && (
+        <p style={{ color: '#94a3b8', fontSize: 14, marginTop: 0 }}>
+          Every optimization and walk-forward run is saved with its seed and inputs, so results are
+          reproducible and auditable. Click a row to reload it.
+        </p>
+      )}
+      {open &&
+        (runs.length === 0 ? (
+          <p style={{ color: '#64748b' }}>No runs yet.</p>
+        ) : (
         <div className="scroll-table">
           <table>
             <thead>
@@ -1343,7 +1399,7 @@ function RunHistoryPanel({
             </tbody>
           </table>
         </div>
-      )}
+        ))}
     </div>
   )
 }

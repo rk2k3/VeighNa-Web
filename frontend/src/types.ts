@@ -69,9 +69,11 @@ export interface Analytics {
     skew: number
     kurtosis: number
     var_95: number
+    cvar_95: number
     best: number
     worst: number
   } | null
+  risk_ratios: { sortino: number | null; calmar: number | null } | null
   rolling_sharpe: { date: string; sharpe: number }[]
   trade_stats: {
     count: number
@@ -143,6 +145,10 @@ export interface BenchmarkComparison {
   beta: number
   alpha: number
   correlation: number
+  tracking_error: number
+  information_ratio: number
+  up_capture: number | null
+  down_capture: number | null
 }
 
 export interface Benchmark {

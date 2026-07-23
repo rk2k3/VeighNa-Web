@@ -29,7 +29,7 @@ function formatMoney(value: number) {
   return '$' + value.toLocaleString(undefined, { maximumFractionDigits: 0 })
 }
 
-export function BacktestCharts({
+export function EquityChart({
   dailyResults,
   benchmark,
 }: {
@@ -38,8 +38,6 @@ export function BacktestCharts({
 }) {
   const hasBenchmark = !!benchmark && benchmark.length > 0
 
-  // Merge the benchmark balance onto each strategy day (matched by date) so both
-  // lines share one dataset on the equity chart.
   const equityData = useMemo(() => {
     if (!hasBenchmark) return dailyResults
     const byDate = new Map(benchmark!.map((p) => [p.date, p.balance]))
@@ -49,61 +47,69 @@ export function BacktestCharts({
   if (!dailyResults.length) return null
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 20 }}>
-      <div>
-        <h3>Equity Curve</h3>
-        <ResponsiveContainer width="100%" height={260}>
-          <LineChart data={equityData}>
-            <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" />
-            <XAxis dataKey="date" stroke={AXIS_COLOR} tick={{ fontSize: 11 }} minTickGap={40} />
-            <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} tickFormatter={formatMoney} width={80} domain={['auto', 'auto']} />
-            <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => formatMoney(Number(v))} />
-            {hasBenchmark && <Legend wrapperStyle={{ fontSize: 12 }} />}
-            <Line type="monotone" dataKey="balance" name="Strategy" stroke="#2563eb" strokeWidth={2} dot={false} />
-            {hasBenchmark && (
-              <Line
-                type="monotone"
-                dataKey="benchmark"
-                name="Benchmark"
-                stroke="#94a3b8"
-                strokeWidth={1.5}
-                strokeDasharray="5 3"
-                dot={false}
-              />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+    <div>
+      <h3>Equity Curve</h3>
+      <ResponsiveContainer width="100%" height={260}>
+        <LineChart data={equityData}>
+          <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" />
+          <XAxis dataKey="date" stroke={AXIS_COLOR} tick={{ fontSize: 11 }} minTickGap={40} />
+          <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} tickFormatter={formatMoney} width={80} domain={['auto', 'auto']} />
+          <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => formatMoney(Number(v))} />
+          {hasBenchmark && <Legend wrapperStyle={{ fontSize: 12 }} />}
+          <Line type="monotone" dataKey="balance" name="Strategy" stroke="#2563eb" strokeWidth={2} dot={false} />
+          {hasBenchmark && (
+            <Line
+              type="monotone"
+              dataKey="benchmark"
+              name="Benchmark"
+              stroke="#94a3b8"
+              strokeWidth={1.5}
+              strokeDasharray="5 3"
+              dot={false}
+            />
+          )}
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
 
-      <div>
-        <h3>Drawdown</h3>
-        <ResponsiveContainer width="100%" height={180}>
-          <AreaChart data={dailyResults}>
-            <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" />
-            <XAxis dataKey="date" stroke={AXIS_COLOR} tick={{ fontSize: 11 }} minTickGap={40} />
-            <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} tickFormatter={(v) => v + '%'} width={60} />
-            <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => Number(v).toFixed(2) + '%'} />
-            <Area type="monotone" dataKey="ddpercent" name="Drawdown" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.25} />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+export function DrawdownChart({ dailyResults }: { dailyResults: DailyResult[] }) {
+  if (!dailyResults.length) return null
+  return (
+    <div>
+      <h3>Drawdown</h3>
+      <ResponsiveContainer width="100%" height={180}>
+        <AreaChart data={dailyResults}>
+          <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" />
+          <XAxis dataKey="date" stroke={AXIS_COLOR} tick={{ fontSize: 11 }} minTickGap={40} />
+          <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} tickFormatter={(v) => v + '%'} width={60} />
+          <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => Number(v).toFixed(2) + '%'} />
+          <Area type="monotone" dataKey="ddpercent" name="Drawdown" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.25} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
 
-      <div>
-        <h3>Daily P&amp;L</h3>
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={dailyResults}>
-            <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" />
-            <XAxis dataKey="date" stroke={AXIS_COLOR} tick={{ fontSize: 11 }} minTickGap={40} />
-            <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} tickFormatter={formatMoney} width={80} />
-            <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => formatMoney(Number(v))} />
-            <Bar dataKey="net_pnl" name="Net P&L">
-              {dailyResults.map((d, i) => (
-                <Cell key={i} fill={d.net_pnl >= 0 ? '#10b981' : '#f43f5e'} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+export function DailyPnlChart({ dailyResults }: { dailyResults: DailyResult[] }) {
+  if (!dailyResults.length) return null
+  return (
+    <div>
+      <h3>Daily P&amp;L</h3>
+      <ResponsiveContainer width="100%" height={180}>
+        <BarChart data={dailyResults}>
+          <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" />
+          <XAxis dataKey="date" stroke={AXIS_COLOR} tick={{ fontSize: 11 }} minTickGap={40} />
+          <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} tickFormatter={formatMoney} width={80} />
+          <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => formatMoney(Number(v))} />
+          <Bar dataKey="net_pnl" name="Net P&L">
+            {dailyResults.map((d, i) => (
+              <Cell key={i} fill={d.net_pnl >= 0 ? '#10b981' : '#f43f5e'} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   )
 }

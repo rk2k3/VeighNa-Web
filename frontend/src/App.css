@@ -37,6 +37,32 @@
   }
 }
 
+/* Sub-tabs inside the backtest Results section. */
+.result-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #1e293b;
+  margin: 16px 0 18px;
+}
+.result-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.result-tab:hover {
+  color: #e2e8f0;
+}
+.result-tab.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
 /* Scrollable results table (keeps long trial lists to a fixed height with a
    pinned header). */
 .scroll-table {
